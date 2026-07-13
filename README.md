@@ -26,6 +26,9 @@ It's all built on a **handmade Weyland-Yutani CRT wallpaper** (an original 5120�
 every GRUB, boot, and splash background is derived from it, and it's included so you can set it
 as your desktop too (see [`wallpaper/`](wallpaper/)).
 
+Plus **[`index.html`](index.html)** - an interactive picker that previews every option and prints
+the exact install commands for whatever you choose (see [below](#preview-and-pick-it-all-in-indexhtml)).
+
 ---
 
 ## Screenshots
@@ -37,65 +40,38 @@ as your desktop too (see [`wallpaper/`](wallpaper/)).
 
 ---
 
-## My favourite setup
+## Preview, pick and see install commands in `index.html`
 
-**MU-TH-UR Console** boot splash + **System Online** Plasma splash - the ship's computer runs
-its startup self-test as you boot, then the emblem powers on as your desktop comes up (it is also short enough to be a meaningful after-login splash. 
+**Start here.** Download this repo, then open **[`index.html`](index.html)** in any browser. It's an
+interactive picker that animates every option live and lets you choose one of each:
 
-Run everything from **inside this folder** (`cd` into it first or find the folder and right click 'Open Terminal Here').
+- a **GRUB menu**,
+- a **boot splash** (Plymouth, before login),
+- and a **Plasma splash** (KDE, after login) (you can choose all of these and select them in the system settings).
 
-**1 · GRUB menu**
-```bash
-sudo rm -rf /boot/grub2/themes/weyland-crt
-sudo mkdir -p /boot/grub2/themes
-sudo cp -rT grub /boot/grub2/themes/weyland-crt
-sudo sed -i '/^GRUB_THEME=/d' /etc/default/grub
-echo 'GRUB_THEME="/boot/grub2/themes/weyland-crt/theme.txt"' | sudo tee -a /etc/default/grub
-sudo sed -i 's/^GRUB_TERMINAL_OUTPUT=/#&/' /etc/default/grub
-grep -q '^GRUB_GFXMODE=' /etc/default/grub || echo 'GRUB_GFXMODE=auto' | sudo tee -a /etc/default/grub
-grep -q '^GRUB_GFXPAYLOAD_LINUX=' /etc/default/grub || echo 'GRUB_GFXPAYLOAD_LINUX=keep' | sudo tee -a /etc/default/grub
-sudo grub2-editenv - unset menu_auto_hide
-sudo grub2-mkconfig -o /boot/grub2/grub.cfg
-```
+Set your **screen size** at the top (1080p, 1440p, ultrawide, 4K, 32:9 and more) so the preview
+matches your display. As you pick, it **prints the exact install commands** for your selection,
+ready to copy and paste into a terminal. Preview first, choose what you like, then run what it
+gives you.
 
-**2 · Boot splash - MU-TH-UR Console**
-```bash
-sudo dnf install plymouth-plugin-script plymouth-plugin-label
-sudo rm -rf /usr/share/plymouth/themes/weyland-muthur
-sudo cp -rT plymouth/weyland-muthur /usr/share/plymouth/themes/weyland-muthur
-sudo plymouth-set-default-theme -R weyland-muthur       # -R rebuilds the boot image (~1 min)
-```
-
-**3 · Plasma splash - System Online** (no root, no reboot)
-```bash
-mkdir -p ~/.local/share/plasma/look-and-feel
-cp -r plasma-splash/weyland-online ~/.local/share/plasma/look-and-feel/
-kbuildsycoca6
-kwriteconfig6 --file ksplashrc --group KSplash --key Engine KSplashQML
-kwriteconfig6 --file ksplashrc --group KSplash --key Theme weyland-online
-```
-
-Reboot to see it. Prefer a different look? Any option can be swapped in - see the tables below,
-**[INSTALL.txt](INSTALL.txt)** for the full step-by-step, or just open the preview page.
-
----
-
-## Preview before you commit
-
-- **`index.html`** - open in a browser: an interactive picker that animates every option and
-  **prints the exact commands** for whatever you select (GRUB / boot splash / Plasma splash).
-- **`plasma-splash-preview.html`** - a live gallery of the four Plasma splashes.
-- Preview a Plasma splash on the spot, no logout: `ksplashqml --test weyland-online`
+Also handy:
+- After installation, any and all KDE Plasma Splash screens will be found in System Settings - Color & Themes - Splash Screen.
 
 ---
 
 ## Requirements
 
-- A **Fedora-based** distro - profiled and tested on **Nobara Linux** (KDE Plasma edition).
+- A **Fedora-based** distro. This has only been tested on **Nobara Linux** (KDE Plasma edition).
 - **KDE Plasma 6** (for the Plasma splash; the GRUB + boot splashes are DE-agnostic).
 - **GRUB2** and **Plymouth**, plus `plymouth-plugin-script` and `plymouth-plugin-label`
-  (installed by step 2 above - without the label plugin the text splashes render blank).
-- `sudo` for the GRUB + boot-splash steps. The Plasma splash installs into your home, no root.
+  (installed by the boot-splash step below - without the label plugin the text splashes render blank).
+
+---
+
+## My favourite setup
+
+**MU-TH-UR Console** boot splash + **System Online** Plasma splash - the ship's computer runs
+its startup self-test as you boot, then the emblem powers on as your desktop comes up (it is also short enough to be a meaningful after-login splash. 
 
 ---
 
@@ -128,13 +104,35 @@ Or pick one visually in **System Settings › Colors & Themes › Splash Screen*
 
 ---
 
-## Reverting
+## Reverting / uninstalling
 
-- **Boot splash:** `sudo plymouth-set-default-theme -R bgrt`
-- **Plasma splash:** choose *Breeze* (or *None*) in the Splash Screen list, then
-  `rm -r ~/.local/share/plasma/look-and-feel/weyland-*`
-- **GRUB:** remove the `GRUB_THEME` and `GRUB_GFXPAYLOAD_LINUX` lines from `/etc/default/grub`,
-  un-comment `GRUB_TERMINAL_OUTPUT`, then re-run the `grub2-mkconfig` line.
+Run everything from **inside this folder**. Each block is self-contained - paste the whole
+thing and you're back to stock. Do all three to remove the theme completely, or just the one
+you want to undo.
+
+**1 · GRUB menu** - restores the default boot menu
+```bash
+sudo rm -rf /boot/grub2/themes/weyland-crt
+sudo sed -i '/^GRUB_THEME=/d' /etc/default/grub
+sudo sed -i '/^GRUB_GFXPAYLOAD_LINUX=/d' /etc/default/grub
+sudo sed -i 's/^#GRUB_TERMINAL_OUTPUT=/GRUB_TERMINAL_OUTPUT=/' /etc/default/grub
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+```
+
+**2 · Boot splash (Plymouth)** - restores the default Fedora/Nobara splash
+```bash
+sudo plymouth-set-default-theme -R bgrt
+sudo rm -rf /usr/share/plymouth/themes/weyland-*
+```
+
+**3 · Plasma splash (KDE)** - no root, no reboot
+```bash
+kwriteconfig6 --file ksplashrc --group KSplash --key Theme Breeze
+rm -rf ~/.local/share/plasma/look-and-feel/weyland-*
+kbuildsycoca6
+```
+
+Reboot to confirm everything is back to stock.
 
 ---
 
@@ -147,5 +145,3 @@ Or pick one visually in **System Settings › Colors & Themes › Splash Screen*
 - A fan project - *Weyland-Yutani* and *Alien* are trademarks of 20th Century Studios; this is
   unofficial and not affiliated with or endorsed by the rights holders.
 - Built and profiled on Nobara Linux / KDE Plasma 6. Full install reference: **[INSTALL.txt](INSTALL.txt)**.
-
-> *"Building Better Worlds."*
