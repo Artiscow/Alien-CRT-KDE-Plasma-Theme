@@ -20,7 +20,7 @@ The theme covers the three screens you see while the machine starts, in order:
 
 Every splash carries the rolling CRT scanline grille + sweep band (the one exception is the
 Plasma **System Online**, which is deliberately clean). Pick any boot splash and any Plasma
-splash independently - they don't have to match.
+splash independently.
 
 It's all built on a **handmade Weyland-Yutani CRT wallpaper** (an original 5120×1440 piece) -
 every GRUB, boot, and splash background is derived from it, and it's included so you can set it
@@ -37,12 +37,12 @@ as your desktop too (see [`wallpaper/`](wallpaper/)).
 
 ---
 
-## ⭐ Recommended setup
+## My favourite setup
 
 **MU-TH-UR Console** boot splash + **System Online** Plasma splash - the ship's computer runs
-its startup self-test as you boot, then the emblem powers on as your desktop comes up.
+its startup self-test as you boot, then the emblem powers on as your desktop comes up (it is also short enough to be a meaningful after-login splash. 
 
-Run everything from **inside this folder** (`cd` into it first).
+Run everything from **inside this folder** (`cd` into it first or find the folder and right click 'Open Terminal Here').
 
 **1 · GRUB menu**
 ```bash
