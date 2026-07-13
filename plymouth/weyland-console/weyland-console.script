@@ -1,0 +1,132 @@
+# WEYLAND-YUTANI CRT plymouth splash  ::  built by the CRT theme builder
+Window.SetBackgroundTopColor(0,0,0);
+Window.SetBackgroundBottomColor(0,0,0);
+sw = Window.GetWidth();
+sh = Window.GetHeight();
+
+# cover-fit the background so it never distorts, at ANY screen aspect ratio
+bg.raw = Image("background.png");
+bir = bg.raw.GetWidth() / bg.raw.GetHeight();
+sr = sw / sh;
+if (sr > bir) { bw = sw; bh = sw / bir; }
+else { bh = sh; bw = sh * bir; }
+bg.image = bg.raw.Scale(bw, bh);
+bg.sprite = Sprite(bg.image);
+bg.sprite.SetX((sw - bw) / 2); bg.sprite.SetY((sh - bh) / 2); bg.sprite.SetZ(-100);
+
+# ---- CRT effect: rolling scanline grille + soft phosphor sweep band ----
+# (plymouth has no shader; this is the closest a sprite engine gets to a live CRT)
+grille.image = Image("crt_grille.png").Scale(sw, sh + 12);
+grille.sprite = Sprite(grille.image);
+grille.sprite.SetX(0); grille.sprite.SetZ(50);
+band.h = Math.Int(sh * 0.20);
+band.image = Image("crt_band.png").Scale(sw, band.h);
+band.sprite = Sprite(band.image);
+band.sprite.SetX(0); band.sprite.SetZ(49);
+tick = 0;
+fun crtfx(){
+  grille.sprite.SetY(0 - (tick % 12));
+  grille.sprite.SetOpacity(0.16 + 0.05 * Math.Sin(tick / 6));
+  band.sprite.SetY((tick * 3) % (sh + band.h) - band.h);
+  band.sprite.SetOpacity(0.10);
+}
+
+# ---- password / question dialog (LUKS unlock etc.) ----
+anim.hide = 0;
+dialog.image = Image("dialog.png");
+dialog.box = Sprite();
+dialog.prompt = Sprite();
+dialog.entry = Sprite();
+fun dialog_show(prompt, entrytext){
+  anim.hide = 1;
+  if (!prompt) prompt = "PASSWORD REQUIRED";
+  if (!entrytext) entrytext = "_";
+  dw = dialog.image.GetWidth();
+  dh = dialog.image.GetHeight();
+  dy = sh*0.60 - dh/2;
+  dialog.box.SetImage(dialog.image);
+  dialog.box.SetX(sw/2 - dw/2); dialog.box.SetY(dy); dialog.box.SetZ(60);
+  dialog.box.SetOpacity(1);
+  p = Image.Text(prompt, 0.23, 0.82, 0.44);
+  dialog.prompt.SetImage(p);
+  dialog.prompt.SetX(sw/2 - p.GetWidth()/2); dialog.prompt.SetY(dy + dh*0.20); dialog.prompt.SetZ(61);
+  dialog.prompt.SetOpacity(1);
+  e = Image.Text(entrytext, 0.49, 1.00, 0.59);
+  dialog.entry.SetImage(e);
+  dialog.entry.SetX(sw/2 - e.GetWidth()/2); dialog.entry.SetY(dy + dh*0.55); dialog.entry.SetZ(61);
+  dialog.entry.SetOpacity(1);
+}
+fun display_password_cb(prompt, bullets){
+  if (bullets > 24) bullets = 24;
+  s = "";
+  for (i = 0; i < bullets; i++) s += "* ";
+  if (bullets == 0) s = "_";
+  dialog_show(prompt, s);
+}
+fun display_question_cb(prompt, entry){
+  if (entry == "") entry = "_";
+  dialog_show(prompt, entry);
+}
+fun display_normal_cb(){
+  anim.hide = 0;
+  dialog.box.SetOpacity(0);
+  dialog.prompt.SetOpacity(0);
+  dialog.entry.SetOpacity(0);
+}
+Plymouth.SetDisplayPasswordFunction(display_password_cb);
+Plymouth.SetDisplayQuestionFunction(display_question_cb);
+Plymouth.SetDisplayNormalFunction(display_normal_cb);
+
+# ---- console log (typed seeded lines, blinking cursor; no live status line) ----
+fgR = 0.231; fgG = 0.820; fgB = 0.435;
+maxlines = 9;
+lh = Math.Int(sh/30) + 2;
+logx = sw * 0.16;
+logy = sh * 0.40;
+nlines = 0;
+for (i = 0; i < maxlines; i++) sprites[i] = Sprite();
+
+fun redraw () {
+  first = 0;
+  if (nlines > maxlines) first = nlines - maxlines;
+  row = 0;
+  for (i = first; i < nlines; i++) {
+    sprites[row].SetImage(Image.Text(lines[i], fgR, fgG, fgB));
+    sprites[row].SetX(logx);
+    sprites[row].SetY(logy + row * lh);
+    sprites[row].SetZ(5);
+    row++;
+  }
+}
+fun addline (text) {
+  lines[nlines] = text;
+  nlines++;
+  redraw();
+}
+cur.image = Image("cursor.png");
+cur.sprite = Sprite(cur.image);
+cur.sprite.SetZ(6);
+# log follows the real boot progress: each line appears as boot passes its mark
+shown = 0;
+prog = 0;
+fun progress_cb(duration, progress){ prog = progress; }
+Plymouth.SetBootProgressFunction(progress_cb);
+fun refresh(){
+  tick++;
+  if (shown < 1) { addline("> WEYLAND-YUTANI SYSTEMS // INTERFACE 2037"); shown = 1; }
+  if (shown < 2) { if (prog >= 0.15) { addline("> INITIALIZING KERNEL ......... OK"); shown = 2; } }
+  if (shown < 3) { if (prog >= 0.30) { addline("> MOUNTING DATA CORE .......... OK"); shown = 3; } }
+  if (shown < 4) { if (prog >= 0.45) { addline("> ESTABLISHING UPLINK ........ OK"); shown = 4; } }
+  if (shown < 5) { if (prog >= 0.60) { addline("> RUNNING SELF-DIAGNOSTIC ..... OK"); shown = 5; } }
+  if (shown < 6) { if (prog >= 0.80) { addline("> ALL SYSTEMS NOMINAL"); shown = 6; } }
+  if (shown < 7) { if (prog >= 0.95) { addline("> AWAITING INPUT "); shown = 7; } }
+
+  row = nlines;
+  if (row > maxlines) row = maxlines;
+  cur.sprite.SetX(logx);
+  cur.sprite.SetY(logy + row * lh);
+  if ((Math.Int(tick / 22) % 2) == 0) cur.sprite.SetOpacity(0.85);
+  else cur.sprite.SetOpacity(0);
+  crtfx();
+}
+Plymouth.SetRefreshFunction(refresh);

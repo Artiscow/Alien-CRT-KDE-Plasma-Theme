@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel/Splash",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Weyland-Yutani CRT"
+            }
+        ],
+        "Category": "",
+        "Description": "Alien CRT splash — MU-TH-UR ship computer startup self-test",
+        "Id": "weyland-muthur",
+        "License": "GPLv3",
+        "Name": "Weyland-Yutani — MU-TH-UR Console",
+        "Website": ""
+    },
+    "Keywords": "Desktop;Workspace;Appearance;Look and Feel;Logout;Lock;Suspend;Shutdown;Hibernate;",
+    "X-Plasma-APIVersion": "2"
+}

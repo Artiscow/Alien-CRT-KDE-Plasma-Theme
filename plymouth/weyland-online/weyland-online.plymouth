@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=WEYLAND-YUTANI CRT (online)
+Description=System online — the Weyland-Yutani emblem with ONLINE
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/weyland-online
+ScriptFile=/usr/share/plymouth/themes/weyland-online/weyland-online.script

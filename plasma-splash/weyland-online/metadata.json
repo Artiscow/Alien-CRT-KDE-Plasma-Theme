@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel/Splash",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Weyland-Yutani CRT"
+            }
+        ],
+        "Category": "",
+        "Description": "Alien CRT splash — the Weyland-Yutani emblem powers on with ONLINE",
+        "Id": "weyland-online",
+        "License": "GPLv3",
+        "Name": "Weyland-Yutani — System Online",
+        "Website": ""
+    },
+    "Keywords": "Desktop;Workspace;Appearance;Look and Feel;Logout;Lock;Suspend;Shutdown;Hibernate;",
+    "X-Plasma-APIVersion": "2"
+}

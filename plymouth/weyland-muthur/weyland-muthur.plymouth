@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=WEYLAND-YUTANI CRT (muthur)
+Description=MU-TH-UR wake-up — AI systems coming online
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/weyland-muthur
+ScriptFile=/usr/share/plymouth/themes/weyland-muthur/weyland-muthur.script

@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel/Splash",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Weyland-Yutani CRT"
+            }
+        ],
+        "Category": "",
+        "Description": "Alien CRT splash — emblem and power gauge energizing the main bus",
+        "Id": "weyland-nostromo",
+        "License": "GPLv3",
+        "Name": "Weyland-Yutani — Nostromo Power-up",
+        "Website": ""
+    },
+    "Keywords": "Desktop;Workspace;Appearance;Look and Feel;Logout;Lock;Suspend;Shutdown;Hibernate;",
+    "X-Plasma-APIVersion": "2"
+}

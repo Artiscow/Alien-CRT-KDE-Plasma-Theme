@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=WEYLAND-YUTANI CRT
+Description=Alien CRT boot splash — NOSTROMO
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/weyland-console
+ScriptFile=/usr/share/plymouth/themes/weyland-console/weyland-console.script

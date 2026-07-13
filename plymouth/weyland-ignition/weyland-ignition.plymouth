@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=WEYLAND-YUTANI CRT (ignition)
+Description=Emblem ignition — the Weyland-Yutani logo powers on
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/weyland-ignition
+ScriptFile=/usr/share/plymouth/themes/weyland-ignition/weyland-ignition.script

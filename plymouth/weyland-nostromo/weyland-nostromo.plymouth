@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=WEYLAND-YUTANI CRT (nostromo)
+Description=Nostromo power-up — main bus energizing
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/weyland-nostromo
+ScriptFile=/usr/share/plymouth/themes/weyland-nostromo/weyland-nostromo.script
