@@ -6,8 +6,6 @@ A cohesive theme that dresses up your whole startup in the *Weyland-Yutani* / MU
 aesthetic - rolling scanlines, a soft phosphor sweep, and the winged-W emblem - from the
 moment you power on to the moment your desktop appears.
 
-https://github.com/user-attachments/assets/af00250e-4542-4cee-8865-e11e8d3e533a
-
 ![The GRUB boot menu](screenshots/grub-menu.png)
 
 ---
@@ -30,6 +28,8 @@ as your desktop too (see [`wallpaper/`](wallpaper/)).
 
 Plus **[`index.html`](index.html)** - an interactive picker that previews every option and prints
 the exact install commands for whatever you choose (see [below](#preview-and-pick-it-all-in-indexhtml)).
+
+https://github.com/user-attachments/assets/af00250e-4542-4cee-8865-e11e8d3e533a
 
 ---
 
