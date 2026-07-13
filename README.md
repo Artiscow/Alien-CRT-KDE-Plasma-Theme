@@ -1,10 +1,12 @@
-# WEYLAND-YUTANI CRT
+# WEYLAND-YUTANI CRT for Nobara Linux
 
 **An *Alien* / Nostromo phosphor-green CRT boot experience for Nobara Linux (KDE Plasma).**
 
 A cohesive theme that dresses up your whole startup in the *Weyland-Yutani* / MU-TH-UR
 aesthetic - rolling scanlines, a soft phosphor sweep, and the winged-W emblem - from the
 moment you power on to the moment your desktop appears.
+
+https://github.com/user-attachments/assets/af00250e-4542-4cee-8865-e11e8d3e533a
 
 ![The GRUB boot menu](screenshots/grub-menu.png)
 
