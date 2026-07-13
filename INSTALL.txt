@@ -1,0 +1,102 @@
+WEYLAND-YUTANI CRT — Nobara boot theme
+======================================
+
+Open  index.html  in a browser to preview the boot splashes and pick one; it
+shows the exact commands for your choice. The full steps are below.
+--------------------------------------------------------------------
+
+Contents:
+  grub/                     the GRUB boot-menu theme
+  plymouth/weyland-muthur   boot splash: MU-TH-UR ship computer startup self-test
+  plymouth/weyland-online   boot splash: the Weyland-Yutani emblem powers on + ONLINE
+  plymouth/weyland-nostromo boot splash: emblem + power gauge energizing 0->100%
+  plymouth/weyland-ignition boot splash: minimal — the Weyland-Yutani emblem powers on
+  plymouth/weyland-console  boot splash: typed green log + blinking cursor
+  plymouth/weyland-bar      boot splash: progress bar
+  plymouth/weyland-standby  boot splash: segmented "standby" meter
+  (every splash has the rolling CRT scanlines + sweep band)
+
+Run everything from inside this unzipped folder (cd into it first).
+
+--------------------------------------------------------------------
+1) GRUB MENU
+--------------------------------------------------------------------
+sudo rm -rf /boot/grub2/themes/weyland-crt
+sudo mkdir -p /boot/grub2/themes
+sudo cp -rT grub /boot/grub2/themes/weyland-crt
+
+# point GRUB at it (safe to re-run)
+sudo sed -i '/^GRUB_THEME=/d' /etc/default/grub
+echo 'GRUB_THEME="/boot/grub2/themes/weyland-crt/theme.txt"' | sudo tee -a /etc/default/grub
+
+# Nobara ships a text-only menu + hidden menu — turn both off (only needed once)
+sudo sed -i 's/^GRUB_TERMINAL_OUTPUT=/#&/' /etc/default/grub
+grep -q '^GRUB_GFXMODE=' /etc/default/grub || echo 'GRUB_GFXMODE=auto' | sudo tee -a /etc/default/grub
+sudo grub2-editenv - unset menu_auto_hide
+
+# carry GRUB's graphics mode straight into Plymouth so picking a kernel goes cleanly to the
+# splash with no black flash (optional; drop this line if Plymouth ever looks garbled).
+grep -q '^GRUB_GFXPAYLOAD_LINUX=' /etc/default/grub || echo 'GRUB_GFXPAYLOAD_LINUX=keep' | sudo tee -a /etc/default/grub
+
+# apply (REQUIRED — this also registers the theme font)
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+
+--------------------------------------------------------------------
+2) BOOT SPLASH — install the plugins once, then pick ONE splash
+--------------------------------------------------------------------
+sudo dnf install plymouth-plugin-script plymouth-plugin-label
+
+# copy in the splash themes (clean install each time)
+for t in weyland-muthur weyland-online weyland-nostromo weyland-ignition weyland-console weyland-bar weyland-standby; do
+  sudo rm -rf /usr/share/plymouth/themes/$t
+  sudo cp -rT plymouth/$t /usr/share/plymouth/themes/$t
+done
+
+# choose the one you want (run one of these):
+sudo plymouth-set-default-theme -R weyland-muthur      # MU-TH-UR ship computer self-test
+# sudo plymouth-set-default-theme -R weyland-online    # emblem powers on + ONLINE
+# sudo plymouth-set-default-theme -R weyland-nostromo  # emblem + power gauge energizing
+# sudo plymouth-set-default-theme -R weyland-ignition  # minimal: the emblem powers on
+# sudo plymouth-set-default-theme -R weyland-console   # plain green boot log
+# sudo plymouth-set-default-theme -R weyland-bar       # minimal progress bar
+# sudo plymouth-set-default-theme -R weyland-standby   # segmented standby meter
+# the -R rebuilds the boot image (~1 min); the splash lives in that image, so
+# re-run this line whenever you switch splash or copy new files in.
+
+# make sure the splash is on: check /etc/default/grub has 'quiet' + 'splash'
+# (or 'rhgb') between the quotes on a GRUB_CMDLINE_LINUX line; if you edit it,
+# re-run the grub2-mkconfig line above.
+
+--------------------------------------------------------------------
+3) PLASMA SPLASH — the "Splash Screen" shown AFTER login (KDE)
+--------------------------------------------------------------------
+# Different from the boot splash above: this is the screen KDE shows while the
+# desktop loads, chosen in System Settings > Colors & Themes > Splash Screen.
+# No root needed — it installs into your home.
+mkdir -p ~/.local/share/plasma/look-and-feel
+cp -r plasma-splash/weyland-muthur plasma-splash/weyland-online plasma-splash/weyland-nostromo plasma-splash/weyland-ignition \
+      ~/.local/share/plasma/look-and-feel/
+kbuildsycoca6 >/dev/null 2>&1   # refresh so they show up in the list
+
+# then either pick it in System Settings > Colors & Themes > Splash Screen
+# (hit the little ▶ on a tile to preview first), or set it from the terminal:
+kwriteconfig6 --file ksplashrc --group KSplash --key Engine KSplashQML
+kwriteconfig6 --file ksplashrc --group KSplash --key Theme weyland-ignition
+#   ... or weyland-muthur / weyland-nostromo
+
+# preview any of them right now, no logout needed:
+#   ksplashqml --test weyland-ignition
+
+--------------------------------------------------------------------
+Reboot to see it.
+
+Test a boot splash without rebooting (from a text console, Ctrl+Alt+F3):
+  sudo plymouthd ; sudo plymouth show-splash ; sleep 8 ; sudo plymouth quit
+  (Ctrl+Alt+F2 to return to the desktop)
+
+Revert a boot splash:   sudo plymouth-set-default-theme -R bgrt
+Revert Plasma splash:   pick "Breeze" (or "None") in the Splash Screen list, and
+                        rm -r ~/.local/share/plasma/look-and-feel/weyland-{muthur,nostromo,ignition}
+Revert GRUB:      remove the GRUB_THEME and GRUB_GFXPAYLOAD_LINUX lines from
+                  /etc/default/grub, un-comment GRUB_TERMINAL_OUTPUT, re-run the
+                  grub2-mkconfig line.

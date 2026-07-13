@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weyland-Yutani CRT — preview &amp; select</title>
+<style>
+  @font-face{ font-family:'Share Tech Mono'; src:url('share-tech-mono.woff2') format('woff2'); font-display:swap; }
+  :root{ --fg:#3bd16f; --bright:#7dff96; --dim:rgba(90,255,120,.45); --panel:#06140a; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#000; color:var(--fg); font-family:'Share Tech Mono',monospace;
+        min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 16px 60px; }
+  h1{ font-size:15px; letter-spacing:.35em; color:var(--bright); font-weight:600; margin:0 0 2px; text-shadow:0 0 10px rgba(60,255,110,.5); }
+  .sub{ font-size:10px; letter-spacing:.2em; opacity:.6; margin-bottom:18px; }
+
+  /* ---- preview stage ---- */
+  .stage{ position:relative; width:min(100%, 1040px); aspect-ratio:1920/1200; background:#000;
+          border:1px solid rgba(90,255,120,.25); border-radius:6px; overflow:hidden;
+          container-type:size; box-shadow:0 0 40px rgba(0,0,0,.8), inset 0 0 60px rgba(0,0,0,.7); }
+  .stage img.bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .layer{ position:absolute; inset:0; pointer-events:none; }
+  .grille{ position:absolute; left:0; top:0; width:100%; height:calc(100% + 1cqh);
+           object-fit:cover; opacity:.55; z-index:50; animation:roll .4s linear infinite; }
+  .band{ position:absolute; left:0; width:100%; height:20cqh; opacity:.5; z-index:49;
+         animation:sweep 4.5s linear infinite; }
+  @keyframes roll{ from{ transform:translateY(0); } to{ transform:translateY(-0.5cqh); } }
+  @keyframes sweep{ from{ transform:translateY(-20cqh); } to{ transform:translateY(100cqh); } }
+
+  /* console */
+  .con{ position:absolute; left:16cqw; top:40cqh; font-size:2.2cqh; line-height:1.75; letter-spacing:.03em;
+        text-shadow:0 0 .8cqh rgba(70,255,115,.6); white-space:pre; z-index:10; }
+  .cur{ display:inline-block; width:1cqh; height:1.9cqh; vertical-align:-.3cqh; background:var(--bright);
+        box-shadow:0 0 .9cqh rgba(70,255,115,.85); }
+  .cur.off{ opacity:0; }
+
+  /* bar */
+  .barwrap{ position:absolute; left:50%; top:60cqh; transform:translate(-50%,-50%); width:27.5cqw; z-index:10; }
+  .bartrack{ width:100%; height:1cqh; background:rgba(90,255,120,.12); border:1px solid rgba(90,255,120,.4); }
+  .barfill{ height:100%; width:0%; background:var(--fg); box-shadow:0 0 1cqh rgba(60,255,110,.85); }
+
+  /* standby */
+  .std{ position:absolute; left:50%; top:60cqh; transform:translate(-50%,-50%); width:39.58cqw; z-index:10; image-rendering:pixelated; }
+
+  /* cinematic splashes — centered frame sequences drawn at native px (like Plymouth) */
+  .cine{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:10; }
+  #v-muthur{ width:62.50cqw; } #v-nostromo{ width:57.29cqw; } #v-ignition{ width:46.88cqw; } #v-online{ width:46.88cqw; }
+
+  /* grub */
+  .grub{ position:absolute; inset:0; z-index:10; font-size:1.75cqh; color:var(--fg); }
+  .grub .title{ position:absolute; left:0; top:21cqh; width:100%; text-align:center; }
+  .grub .title img{ width:34cqw; }
+  .grub .menu{ position:absolute; left:27cqw; top:40cqh; width:46cqw; display:flex; flex-direction:column; gap:1.4cqh; }
+  .grub .item{ padding:.3cqh .8cqh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:1px solid transparent; }
+  .grub .item.sel{ border-color:rgba(90,255,120,.6); background:rgba(20,50,28,.55); color:var(--bright); box-shadow:0 0 1cqh rgba(40,255,100,.25); }
+  .grub .foot{ position:absolute; left:0; bottom:8cqh; width:100%; text-align:center; opacity:.85; line-height:2; }
+
+  .hidden{ display:none !important; }
+
+  /* ---- controls ---- */
+  .controls{ width:min(100%,1040px); display:flex; gap:10px; align-items:center; justify-content:flex-end;
+             margin-bottom:8px; font-size:10px; letter-spacing:.12em; }
+  .controls label{ display:flex; gap:8px; align-items:center; opacity:.85; }
+  .controls select{ background:var(--panel); color:var(--fg); border:1px solid rgba(90,255,120,.32); border-radius:4px;
+                    font-family:inherit; font-size:11px; padding:4px 7px; outline:none; cursor:pointer; }
+
+  /* ---- selector ---- */
+  .section{ width:min(100%,1040px); margin-top:16px; }
+  .seclabel{ display:flex; align-items:center; gap:10px; font-size:10.5px; letter-spacing:.18em; color:var(--bright);
+             margin:0 2px 8px; text-shadow:0 0 8px rgba(60,255,110,.4); }
+  .seclabel::after{ content:''; flex:1; height:1px; background:rgba(90,255,120,.18); }
+  .seclabel .hint{ color:var(--fg); opacity:.5; letter-spacing:.05em; font-size:9.5px; }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-start; margin:0; width:100%; }
+  .card{ flex:1 1 150px; max-width:232px; background:var(--panel); border:1px solid rgba(90,255,120,.25); border-radius:5px;
+         padding:11px 13px; cursor:pointer; text-align:left; color:var(--fg); font-family:inherit; transition:.15s; }
+  .card:hover{ border-color:rgba(90,255,120,.55); }
+  .card.on{ border-color:var(--bright); background:rgba(30,75,40,.5); color:var(--bright); box-shadow:0 0 14px rgba(40,255,100,.2); }
+  .card.viewing{ box-shadow:inset 3px 0 0 var(--bright); }
+  .card.preview{ opacity:.85; }
+  .card.preview .k::before{ content:'\25B8 '; opacity:.7; }
+  .card .k{ font-size:11px; letter-spacing:.12em; }
+  .card .d{ font-size:9px; opacity:.6; margin-top:3px; line-height:1.4; }
+  .tag{ display:inline-block; font-size:8px; letter-spacing:.1em; opacity:.55; border:1px solid var(--dim); border-radius:3px; padding:1px 5px; margin-bottom:14px; }
+
+  /* ---- apply ---- */
+  .apply{ width:min(100%,1040px); margin-top:14px; background:var(--panel); border:1px solid rgba(90,255,120,.25);
+          border-radius:5px; padding:14px 16px; }
+  .apply h2{ font-size:11px; letter-spacing:.15em; margin:0 0 8px; color:var(--bright); }
+  code, pre{ font-family:inherit; }
+  pre.cmd{ background:#04120a; border:1px solid rgba(90,255,120,.2); border-radius:4px; padding:10px 12px;
+           font-size:12px; color:var(--bright); overflow-x:auto; margin:0 0 10px; white-space:pre-wrap; }
+  button.go{ font-family:inherit; font-size:11px; letter-spacing:.1em; color:#04120a; background:var(--bright);
+             border:none; border-radius:4px; padding:9px 16px; cursor:pointer; }
+  button.go:hover{ box-shadow:0 0 14px rgba(60,255,110,.5); }
+  .note{ font-size:10px; opacity:.6; margin-top:9px; line-height:1.5; }
+  #result{ font-size:11px; margin-top:10px; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+  <h1>WEYLAND-YUTANI CRT</h1>
+  <div class="sub">NOSTROMO // NOBARA BOOT THEME — PREVIEW &amp; SELECT</div>
+
+  <div class="controls">
+    <label>SCREEN
+      <select id="res">
+        <option data-w="1920" data-h="1200" selected>1920 × 1200 · 16:10</option>
+        <option data-w="1920" data-h="1080">1920 × 1080 · 16:9</option>
+        <option data-w="1366" data-h="768">1366 × 768 · 16:9 laptop</option>
+        <option data-w="2560" data-h="1440">2560 × 1440 · 16:9</option>
+        <option data-w="2560" data-h="1600">2560 × 1600 · 16:10</option>
+        <option data-w="3440" data-h="1440">3440 × 1440 · 21:9 ultrawide</option>
+        <option data-w="3840" data-h="2160">3840 × 2160 · 16:9 · 4K</option>
+        <option data-w="5120" data-h="1440">5120 × 1440 · 32:9</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="stage" id="stage">
+    <img class="bg" src="plymouth/weyland-standby/background.png" alt="">
+    <!-- console -->
+    <div class="con hidden" id="v-console"></div>
+    <!-- bar -->
+    <div class="barwrap hidden" id="v-bar"><div class="bartrack"><div class="barfill" id="barfill"></div></div></div>
+    <!-- standby -->
+    <img class="std hidden" id="v-standby" src="plymouth/weyland-standby/frame-0.png" alt="">
+    <!-- cinematic splashes (centered frame sequences) -->
+    <img class="cine hidden" id="v-muthur" src="plymouth/weyland-muthur/frame-0.png" alt="">
+    <img class="cine hidden" id="v-nostromo" src="plymouth/weyland-nostromo/frame-0.png" alt="">
+    <img class="cine hidden" id="v-ignition" src="plymouth/weyland-ignition/frame-0.png" alt="">
+    <img class="cine hidden" id="v-online" src="plymouth/weyland-online/frame-0.png" alt="">
+    <!-- grub -->
+    <div class="grub hidden" id="v-grub">
+      <div class="title"><img src="grub/title.png" alt=""></div>
+      <div class="menu" id="grubmenu"></div>
+      <div class="foot">
+        Use the &uarr; and &darr; keys to select &middot; Enter to boot &middot; 'e' to edit &middot; 'c' for a command line<br>
+        <span id="grubcount">The highlighted entry will boot automatically in 5&nbsp;s.</span>
+      </div>
+    </div>
+    <!-- CRT overlay (on top of everything) -->
+    <img class="band" src="plymouth/weyland-standby/crt_band.png" alt="">
+    <img class="grille" src="plymouth/weyland-standby/crt_grille.png" alt="">
+  </div>
+
+  <div id="cards">
+    <!-- 1 · GRUB boot menu -->
+    <div class="section">
+      <div class="seclabel">1 · GRUB BOOT MENU <span class="hint">— the entry picker, first thing you see · optional</span></div>
+      <div class="row">
+        <button class="card" data-group="grub" data-tab="grub">
+          <div class="k">GRUB MENU</div><div class="d">Themed boot menu — click to include</div></button>
+      </div>
+    </div>
+
+    <!-- 2 · Boot splash (Plymouth) -->
+    <div class="section">
+      <div class="seclabel">2 · BOOT SPLASH <span class="hint">— Plymouth, while the system loads (before login) · pick one</span></div>
+      <div class="row">
+        <button class="card" data-group="splash" data-v="weyland-muthur" data-tab="muthur">
+          <div class="k">MU-TH-UR CONSOLE</div><div class="d">Ship computer self-test &rarr; STARTUP COMPLETE</div></button>
+        <button class="card" data-group="splash" data-v="weyland-online" data-tab="online">
+          <div class="k">SYSTEM ONLINE</div><div class="d">The Weyland-Yutani logo powers on + ONLINE</div></button>
+        <button class="card" data-group="splash" data-v="weyland-nostromo" data-tab="nostromo">
+          <div class="k">NOSTROMO</div><div class="d">Emblem + power gauge energizing 0&rarr;100%</div></button>
+        <button class="card" data-group="splash" data-v="weyland-ignition" data-tab="ignition">
+          <div class="k">EMBLEM IGNITION</div><div class="d">The Weyland-Yutani logo powers on. Minimal</div></button>
+        <button class="card" data-group="splash" data-v="weyland-console" data-tab="console">
+          <div class="k">CONSOLE LOG</div><div class="d">Green boot log types out as the system loads</div></button>
+        <button class="card" data-group="splash" data-v="weyland-bar" data-tab="bar">
+          <div class="k">PROGRESS BAR</div><div class="d">Minimal bar that fills with boot progress</div></button>
+        <button class="card" data-group="splash" data-v="weyland-standby" data-tab="standby">
+          <div class="k">STANDBY METER</div><div class="d">Segmented meter, follows boot load 0&rarr;100%</div></button>
+      </div>
+    </div>
+
+    <!-- 3 · Plasma splash (KDE, after login) -->
+    <div class="section">
+      <div class="seclabel">3 · PLASMA SPLASH <span class="hint">— KDE, while the desktop loads (after login) · pick one</span></div>
+      <div class="row">
+        <button class="card" data-group="plasma" data-v="weyland-muthur" data-tab="muthur">
+          <div class="k">MU-TH-UR CONSOLE</div><div class="d">After-login: ship computer self-test</div></button>
+        <button class="card" data-group="plasma" data-v="weyland-online" data-tab="online">
+          <div class="k">SYSTEM ONLINE</div><div class="d">After-login: the logo powers on + ONLINE</div></button>
+        <button class="card" data-group="plasma" data-v="weyland-nostromo" data-tab="nostromo">
+          <div class="k">NOSTROMO</div><div class="d">After-login: emblem + power gauge</div></button>
+        <button class="card" data-group="plasma" data-v="weyland-ignition" data-tab="ignition">
+          <div class="k">EMBLEM IGNITION</div><div class="d">After-login: the emblem powers on</div></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="apply">
+    <h2>// TO INSTALL YOUR SELECTION (NOBARA)</h2>
+    <pre class="cmd" id="cmd">Select what to install above.</pre>
+    <div class="note">Run these from a terminal inside this folder. Pick one thing at a time — a GRUB menu,
+      a boot splash, or a Plasma splash (click a tile again to un-pick); the box shows exactly what to run
+      for it. Install as many as you like, one after another. The Plasma splash needs no reboot; full
+      step-by-step is in <code>INSTALL.txt</code>.</div>
+  </div>
+
+<script>
+(function(){
+  var FRAMES = 47, RISE = 30;
+  var stdImg = document.getElementById('v-standby');
+  // preload standby frames
+  var cache = [];
+  for(var i=0;i<FRAMES;i++){ var im=new Image(); im.src='plymouth/weyland-standby/frame-'+i+'.png'; cache[i]=im; }
+
+  var LOG = [
+    "> WEYLAND-YUTANI SYSTEMS // INTERFACE 2037",
+    "> INITIALIZING KERNEL ......... OK",
+    "> MOUNTING DATA CORE .......... OK",
+    "> ESTABLISHING UPLINK ........ OK",
+    "> RUNNING SELF-DIAGNOSTIC ..... OK",
+    "> ALL SYSTEMS NOMINAL",
+    "> AWAITING INPUT "
+  ];
+  var LOG_AT = [0, .15, .30, .45, .60, .80, .95];
+
+  var ENTRIES = [
+    "Nobara Linux (7.1.3-200.nobara.fc44.x86_64) 44 (KDE Plasma Desktop Edition)",
+    "Nobara Linux (7.0.11-200.nobara.fc43.x86_64) 43 (KDE Plasma Desktop Edition)",
+    "Nobara Linux (7.0.9-200.nobara.fc43.x86_64) 43 (KDE Plasma Desktop Edition)",
+    "Nobara Linux (0-rescue-22bf48717e41448bbd81d4b5e2e19086) 43 (KDE Plasma Desktop Edition)",
+    "Memory test (memtest86+x64.efi)",
+    "UEFI Firmware Settings",
+    "Windows Boot Manager (on /dev/nvme0n1p1)"
+  ];
+  (function(){
+    var m=document.getElementById('grubmenu');
+    ENTRIES.forEach(function(t,i){ var d=document.createElement('div'); d.className='item'+(i===0?' sel':''); d.textContent=t; m.appendChild(d); });
+  })();
+
+  // cinematic splashes: preload each frame sequence for playback
+  var CINE={ muthur:{n:40,w:1200}, nostromo:{n:40,w:1100}, ignition:{n:40,w:900}, online:{n:40,w:900} };
+  var cineCache={}, cineImg={};
+  for(var ck in CINE){ cineCache[ck]=[]; cineImg[ck]=document.getElementById('v-'+ck);
+    for(var ci=0;ci<CINE[ck].n;ci++){ var cim=new Image(); cim.src='plymouth/weyland-'+ck+'/frame-'+ci+'.png'; cineCache[ck][ci]=cim; } }
+
+  var tab='ignition', selected=null;   // single selection across all groups: "group:value"
+  var bgImg=document.querySelector('.bg');
+  var crtBand=document.querySelector('.band'), crtGrille=document.querySelector('.grille');
+  var views={ console:document.getElementById('v-console'), bar:document.getElementById('v-bar'),
+              standby:stdImg, grub:document.getElementById('v-grub'),
+              muthur:cineImg.muthur, nostromo:cineImg.nostromo, ignition:cineImg.ignition, online:cineImg.online };
+  function show(t){ tab=t; for(var k in views){ views[k].classList.toggle('hidden', k!==t); }
+    // cinematic splashes use the plain CRT background (no baked emblem); everything else the emblem wallpaper
+    bgImg.src = CINE[t] ? 'plymouth/weyland-'+t+'/background.png' : 'plymouth/weyland-standby/background.png'; }
+
+  // ---- resolution / aspect selector ----
+  // The theme crop-fits the background, so ONE build works at every resolution.
+  // This just reshapes the preview to your screen and sizes the meter/bar the way
+  // Plymouth actually will (the standby meter is a fixed 760px, so it looks smaller
+  // on bigger screens; the bar is a fraction of screen height).
+  var stage=document.getElementById('stage');
+  var barwrap=document.getElementById('v-bar');
+  var resSel=document.getElementById('res');
+  function applyRes(){
+    var o=resSel.options[resSel.selectedIndex];
+    var W=+o.getAttribute('data-w'), H=+o.getAttribute('data-h');
+    stage.style.aspectRatio = W+' / '+H;
+    stdImg.style.width = Math.max(9, 760/W*100).toFixed(2)+'cqw';
+    barwrap.style.width = Math.min(60, 44/(W/H)).toFixed(2)+'cqw';
+    for(var ck in CINE){ cineImg[ck].style.width = (CINE[ck].w/W*100).toFixed(2)+'cqw'; }
+  }
+  resSel.addEventListener('change', applyRes);
+  applyRes();
+  function applyCmd(v){
+    return '# BOOT SPLASH — '+v+'\n'
+      + 'sudo rm -rf /usr/share/plymouth/themes/'+v+'\n'
+      + 'sudo cp -rT plymouth/'+v+' /usr/share/plymouth/themes/'+v+'\n'
+      + 'sudo plymouth-set-default-theme -R '+v;
+  }
+  function grubCmd(){
+    return '# GRUB — themed boot menu\n'
+      + 'sudo rm -rf /boot/grub2/themes/weyland-crt\n'
+      + 'sudo mkdir -p /boot/grub2/themes\n'
+      + 'sudo cp -rT grub /boot/grub2/themes/weyland-crt\n'
+      + "sudo sed -i '/^GRUB_THEME=/d' /etc/default/grub\n"
+      + 'echo \'GRUB_THEME="/boot/grub2/themes/weyland-crt/theme.txt"\' | sudo tee -a /etc/default/grub\n'
+      + "sudo sed -i 's/^GRUB_TERMINAL_OUTPUT=/#&/' /etc/default/grub\n"
+      + "grep -q '^GRUB_GFXMODE=' /etc/default/grub || echo 'GRUB_GFXMODE=auto' | sudo tee -a /etc/default/grub\n"
+      + "# keep GRUB's graphics mode straight into Plymouth (no black flash after selecting)\n"
+      + "grep -q '^GRUB_GFXPAYLOAD_LINUX=' /etc/default/grub || echo 'GRUB_GFXPAYLOAD_LINUX=keep' | sudo tee -a /etc/default/grub\n"
+      + 'sudo grub2-editenv - unset menu_auto_hide\n'
+      + 'sudo grub2-mkconfig -o /boot/grub2/grub.cfg';
+  }
+  function plasmaCmd(v){
+    return '# PLASMA SPLASH — '+v+' (KDE, shown after login while the desktop loads)\n'
+      + 'mkdir -p ~/.local/share/plasma/look-and-feel\n'
+      + 'cp -r plasma-splash/'+v+' ~/.local/share/plasma/look-and-feel/\n'
+      + 'kbuildsycoca6\n'
+      + 'kwriteconfig6 --file ksplashrc --group KSplash --key Engine KSplashQML\n'
+      + 'kwriteconfig6 --file ksplashrc --group KSplash --key Theme '+v;
+  }
+
+  // ---- simulated boot: prog 0->1 over 6s, hold 1.6s, repeat ----
+  var t0=performance.now();
+  function loop(now){
+    var e=((now-t0)/1000)%7.6;           // 6s ramp + 1.6s hold
+    var prog = e<6 ? e/6 : 1;
+    // console
+    if(tab==='console'){
+      var html=''; var shown=0;
+      for(var i=0;i<LOG.length;i++){ if(prog>=LOG_AT[i]){ html+=LOG[i]+'\n'; shown=i+1; } }
+      var blink = (Math.floor((now-t0)/500)%2)===0;
+      html += '<span class="cur'+(blink?'':' off')+'"></span>';
+      views.console.innerHTML=html;
+    }
+    // bar
+    if(tab==='bar'){ document.getElementById('barfill').style.width=(prog*100).toFixed(1)+'%'; }
+    // standby
+    if(tab==='standby'){ var idx=Math.min(RISE, Math.round(prog*RISE)); stdImg.src=cache[idx].src; }
+    // cinematic splashes (frame sequence follows boot progress)
+    if(CINE[tab]){ var cn=CINE[tab].n, cidx=Math.min(cn-1, Math.round(prog*(cn-1))); cineImg[tab].src=cineCache[tab][cidx].src; }
+    // grub countdown
+    if(tab==='grub'){ var s=5-Math.floor(((now-t0)/1000)%6); if(s<0)s=0;
+      document.getElementById('grubcount').innerHTML='The highlighted entry will boot automatically in '+s+'&nbsp;s.'; }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ---- selection ----
+  // ONE selection at a time across GRUB / boot splash / Plasma splash. Picking anything
+  // deselects everything else; click the active tile again to un-pick. Nothing is forced.
+  var cards=document.querySelectorAll('.card');
+  function keyOf(card){ return card.getAttribute('data-group')+':'+(card.getAttribute('data-v')||''); }
+  function render(){
+    var cmd;
+    if(!selected){ cmd='Select what to install above.'; }
+    else { var p=selected.split(':'), g=p[0], v=p[1];
+      cmd = g==='grub' ? grubCmd() : g==='plasma' ? plasmaCmd(v) : applyCmd(v); }
+    document.getElementById('cmd').textContent = cmd;
+  }
+  function pick(card){
+    var g=card.getAttribute('data-group'), v=card.getAttribute('data-v');
+    show(card.getAttribute('data-tab'));
+    cards.forEach(function(c){ c.classList.remove('viewing'); });
+    card.classList.add('viewing');                       // highlight exactly the card you're viewing
+    // the Plasma "System Online" splash has no CRT and a clean background — preview it that way
+    var cleanOnline = (g==='plasma' && v==='weyland-online');
+    crtBand.style.display = cleanOnline ? 'none' : '';
+    crtGrille.style.display = cleanOnline ? 'none' : '';
+    if(cleanOnline) bgImg.src = 'plasma-splash/weyland-online/contents/splash/images/background.png';
+    if(card.hasAttribute('data-preview')){ return; }     // preview-only (boot box): never installs
+    var k=keyOf(card);
+    selected = (selected===k) ? null : k;                // toggle single selection
+    cards.forEach(function(c){ c.classList.toggle('on', !c.hasAttribute('data-preview') && keyOf(c)===selected); });
+    render();
+  }
+  cards.forEach(function(c){ c.addEventListener('click', function(){ pick(c); }); });
+  // default: nothing selected for install; just preview the Emblem Ignition splash
+  (function(){
+    var init=document.querySelector('.card[data-group="splash"][data-v="weyland-ignition"]');
+    show('ignition'); init.classList.add('viewing'); render();
+  })();
+})();
+</script>
+</body>
+</html>
