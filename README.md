@@ -27,7 +27,7 @@ every GRUB, boot, and splash background is derived from it, and it's included so
 as your desktop too (see [`wallpaper/`](wallpaper/)).
 
 Plus **[`index.html`](index.html)** - an interactive picker that previews every option and prints
-the exact install commands for whatever you choose (see [below](#preview-and-pick-it-all-in-indexhtml)).
+the exact install commands for whatever you choose (see below).
 
 https://github.com/user-attachments/assets/af00250e-4542-4cee-8865-e11e8d3e533a
 
