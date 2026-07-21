@@ -83,7 +83,10 @@ for (i = 0; i < NUM_FRAMES; i++) anim.frame[i] = Image("frame-" + i + ".png");
 anim.sprite = Sprite(anim.frame[0]);
 anim.w = anim.frame[0].GetWidth();
 anim.h = anim.frame[0].GetHeight();
-anim.sprite.SetX(sw/2 - anim.w/2);
+# left-anchored like a real terminal console (matches the console-log splash's logx = sw*0.16),
+# instead of floating centered — reads correctly at every aspect ratio incl. ultrawide.
+# the -40 offsets the frame's internal left padding so the "> " lines up with 16% of the screen.
+anim.sprite.SetX(sw*0.16 - 40);
 anim.sprite.SetY(sh*0.50 - anim.h/2);
 anim.sprite.SetZ(8);
 # the sequence follows the real boot progress (frames 0..RISE map 0%->100%); no looping

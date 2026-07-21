@@ -43,12 +43,16 @@
 
   /* cinematic splashes — centered frame sequences drawn at native px (like Plymouth) */
   .cine{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:10; }
-  #v-muthur{ width:62.50cqw; } #v-nostromo{ width:57.29cqw; } #v-ignition{ width:46.88cqw; } #v-online{ width:46.88cqw; }
+  #v-nostromo{ width:57.29cqw; } #v-ignition{ width:46.88cqw; } #v-online{ width:46.88cqw; }
+  /* MU-TH-UR is a terminal console — left-anchored (left set by JS to sw*0.16), not centered */
+  #v-muthur{ width:62.50cqw; left:16cqw; transform:translateY(-50%); }
 
   /* grub */
   .grub{ position:absolute; inset:0; z-index:10; font-size:1.75cqh; color:var(--fg); }
-  .grub .title{ position:absolute; left:0; top:21cqh; width:100%; text-align:center; }
-  .grub .title img{ width:34cqw; }
+  /* match the real GRUB theme: title.png is stretched into a fixed box (left 33% / top 21% / 34% x 12%),
+     NOT scaled by aspect ratio — otherwise on ultrawide stages 34cqw balloons in height and overlaps the menu */
+  .grub .title{ position:absolute; left:33cqw; top:21cqh; width:34cqw; height:12cqh; }
+  .grub .title img{ width:100%; height:100%; object-fit:contain; }
   .grub .menu{ position:absolute; left:27cqw; top:40cqh; width:46cqw; display:flex; flex-direction:column; gap:1.4cqh; }
   .grub .item{ padding:.3cqh .8cqh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:1px solid transparent; }
   .grub .item.sel{ border-color:rgba(90,255,120,.6); background:rgba(20,50,28,.55); color:var(--bright); box-shadow:0 0 1cqh rgba(40,255,100,.25); }
@@ -261,6 +265,8 @@
     stdImg.style.width = Math.max(9, 760/W*100).toFixed(2)+'cqw';
     barwrap.style.width = Math.min(60, 44/(W/H)).toFixed(2)+'cqw';
     for(var ck in CINE){ cineImg[ck].style.width = (CINE[ck].w/W*100).toFixed(2)+'cqw'; }
+    // MU-TH-UR console is left-anchored (matches weyland-muthur.script: SetX(sw*0.16 - 40))
+    cineImg.muthur.style.left = ((0.16 - 40/W)*100).toFixed(2)+'cqw';
   }
   resSel.addEventListener('change', applyRes);
   applyRes();
@@ -336,10 +342,12 @@
     show(card.getAttribute('data-tab'));
     cards.forEach(function(c){ c.classList.remove('viewing'); });
     card.classList.add('viewing');                       // highlight exactly the card you're viewing
-    // the Plasma "System Online" splash has no CRT and a clean background — preview it that way
+    // the Plasma "System Online" splash has no CRT and a clean background — preview it that way.
+    // GRUB also has no CRT overlay in the real theme (no scanline band / grille), so drop it there too.
     var cleanOnline = (g==='plasma' && v==='weyland-online');
-    crtBand.style.display = cleanOnline ? 'none' : '';
-    crtGrille.style.display = cleanOnline ? 'none' : '';
+    var noCrt = cleanOnline || g==='grub';
+    crtBand.style.display = noCrt ? 'none' : '';
+    crtGrille.style.display = noCrt ? 'none' : '';
     if(cleanOnline) bgImg.src = 'plasma-splash/weyland-online/contents/splash/images/background.png';
     if(card.hasAttribute('data-preview')){ return; }     // preview-only (boot box): never installs
     var k=keyOf(card);
