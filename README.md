@@ -14,13 +14,13 @@ moment you power on to the moment your desktop appears.
 
 The theme covers the three screens you see while the machine starts, in order:
 
-1. **GRUB boot menu** - the themed entry picker (above), the first thing on screen.
+1. **GRUB boot menu** - the themed entry picker (above), the first thing on screen. **3 menu-font options** (default, bigger, or an alternate typeface).
 2. **Boot splash** (Plymouth) - shown *before login* while the kernel and system load. **7 styles.**
 3. **Plasma splash** (KDE) - the "Splash Screen" shown *after login* while the desktop loads. **4 styles.**
 
-Every splash carries the rolling CRT scanline grille + sweep band (the one exception is the
-Plasma **System Online**, which is deliberately clean). Pick any boot splash and any Plasma
-splash independently.
+Every splash carries the rolling CRT scanline grille + sweep band — and you can turn it **off**
+for a clean, flat screen if you prefer (the Plasma **System Online** style is always clean). Pick
+any boot splash and any Plasma splash independently.
 
 It's all built on a **handmade Weyland-Yutani CRT wallpaper** (an original 5120×1440 piece) -
 every GRUB, boot, and splash background is derived from it, and it's included so you can set it
@@ -51,13 +51,26 @@ interactive picker that animates every option live and lets you choose one of ea
 - a **boot splash** (Plymouth, before login),
 - and a **Plasma splash** (KDE, after login) (you can choose all of these and select them in the system settings).
 
-Set your **screen size** at the top (1080p, 1440p, ultrawide, 4K, 32:9 and more) so the preview
-matches your display. As you pick, it **prints the exact install commands** for your selection,
-ready to copy and paste into a terminal. Preview first, choose what you like, then run what it
-gives you.
+Set your **RESOLUTION** at the top (1080p, 1440p, ultrawide, 4K, 32:9 and more) so the preview
+matches your display, and toggle **CRT LINE** on/off. As you pick, it **prints the exact install
+commands** for your selection — including the extra lines for the variant you chose — ready to
+copy and paste into a terminal. Preview first, choose what you like, then run what it gives you.
 
 Also handy:
 - After installation, any and all KDE Plasma Splash screens will be found in System Settings - Color & Themes - Splash Screen.
+
+### Two build variants
+
+Two independent switches, both offered in the picker (and documented in [INSTALL.txt](INSTALL.txt)):
+
+- **Backgrounds — Native vs Optimized.** Every background is a 5120×1440 master that crop-fits to
+  any screen. *Native* is full quality (~4 MB each); *Optimized* looks identical but is ~14× smaller
+  (~290 KB), which also shrinks the boot image. The optimized set lives in [`optimized/`](optimized/).
+- **CRT line — On vs Off.** Keep the rolling scanline grille + phosphor sweep band, or drop it for a
+  clean flat screen. (GRUB has no CRT overlay; the Plasma **System Online** style is always clean.)
+- **Splash size — Small / Medium / Large.** Scales the *content* — console text, progress bar, power gauge,
+  standby meter, the ONLINE text — while the Weyland emblem stays a fixed size (the exception is **Emblem
+  Ignition**, which *is* the emblem). Medium is the default. GRUB has its own font sizes above.
 
 ---
 
@@ -78,6 +91,16 @@ its startup self-test as you boot, then the emblem powers on as your desktop com
 ---
 
 ## All options
+
+### GRUB menu font
+
+The GRUB entry picker comes in three menu-font layouts — pick one in `index.html` (it points `GRUB_THEME` at the matching file):
+
+| Variant | Font | Theme file |
+|---|---|---|
+| **Default** | Share Tech Mono 16 | `theme.txt` |
+| **Bigger font** | Share Tech Mono 24 — more readable | `theme-bigfont.txt` |
+| **Alt font** | JetBrains Mono 18 — a different typeface | `theme-altfont.txt` |
 
 ### Boot splashes (Plymouth - before login)
 
@@ -143,7 +166,7 @@ Reboot to confirm everything is back to stock.
 - **Wallpaper & CRT artwork - original, handmade by the theme's author.** The phosphor-green,
   scanlined background the entire theme is built on is hand-made original art (5120×1440 master);
   every GRUB / boot / splash background is derived from it.
-- Font: **Share Tech Mono** (SIL Open Font License).
+- Fonts: **Share Tech Mono** and **JetBrains Mono** (both SIL Open Font License).
 - A fan project - *Weyland-Yutani* and *Alien* are trademarks of 20th Century Studios; this is
   unofficial and not affiliated with or endorsed by the rights holders.
 - Built and profiled on Nobara Linux / KDE Plasma 6. Full install reference: **[INSTALL.txt](INSTALL.txt)**.

@@ -3,6 +3,7 @@ Window.SetBackgroundTopColor(0,0,0);
 Window.SetBackgroundBottomColor(0,0,0);
 sw = Window.GetWidth();
 sh = Window.GetHeight();
+scale = 1.0;   # splash size: 0.8 = Small, 1.0 = Medium, 1.25 = Large
 
 # cover-fit the background so it never distorts, at ANY screen aspect ratio
 bg.raw = Image("background.png");
@@ -16,18 +17,23 @@ bg.sprite.SetX((sw - bw) / 2); bg.sprite.SetY((sh - bh) / 2); bg.sprite.SetZ(-10
 
 # ---- CRT effect: rolling scanline grille + soft phosphor sweep band ----
 # (plymouth has no shader; this is the closest a sprite engine gets to a live CRT)
-grille.image = Image("crt_grille.png").Scale(sw, sh + 12);
-grille.sprite = Sprite(grille.image);
-grille.sprite.SetX(0); grille.sprite.SetZ(50);
-band.h = Math.Int(sh * 0.20);
-band.image = Image("crt_band.png").Scale(sw, band.h);
-band.sprite = Sprite(band.image);
-band.sprite.SetX(0); band.sprite.SetZ(49);
+# crt = 1 -> overlay on (the "CRT line" theme variant). The "no CRT line" variant sets crt = 0.
+# The sweep is a free-running loop off `tick` (never tied to boot progress).
+crt = 1;
+if (crt) {
+  grille.image = Image("crt_grille.png").Scale(sw, sh + 12);
+  grille.sprite = Sprite(grille.image);
+  grille.sprite.SetX(0); grille.sprite.SetZ(50);
+  band.h = Math.Int(sh * 0.20);
+  band.image = Image("crt_band.png").Scale(sw, band.h);
+  band.sprite = Sprite(band.image);
+  band.sprite.SetX(0); band.sprite.SetZ(49);
+}
 tick = 0;
 fun crtfx(){
   grille.sprite.SetY(0 - (tick % 12));
   grille.sprite.SetOpacity(0.16 + 0.05 * Math.Sin(tick / 6));
-  band.sprite.SetY((tick * 3) % (sh + band.h) - band.h);
+  band.sprite.SetY((tick * 4) % (sh + band.h) - band.h);
   band.sprite.SetOpacity(0.10);
 }
 
@@ -80,7 +86,8 @@ Plymouth.SetDisplayNormalFunction(display_normal_cb);
 # ---- console log (typed seeded lines, blinking cursor; no live status line) ----
 fgR = 0.231; fgG = 0.820; fgB = 0.435;
 maxlines = 9;
-lh = Math.Int(sh/30) + 2;
+confont = Math.Int(sh * 0.022 * scale);
+lh = Math.Int(confont * 1.55);
 logx = sw * 0.16;
 logy = sh * 0.40;
 nlines = 0;
@@ -91,7 +98,7 @@ fun redraw () {
   if (nlines > maxlines) first = nlines - maxlines;
   row = 0;
   for (i = first; i < nlines; i++) {
-    sprites[row].SetImage(Image.Text(lines[i], fgR, fgG, fgB));
+    sprites[row].SetImage(Image.Text(lines[i], fgR, fgG, fgB, 1.0, "Monospace " + confont));
     sprites[row].SetX(logx);
     sprites[row].SetY(logy + row * lh);
     sprites[row].SetZ(5);
@@ -103,7 +110,8 @@ fun addline (text) {
   nlines++;
   redraw();
 }
-cur.image = Image("cursor.png");
+cur.raw = Image("cursor.png");
+cur.image = cur.raw.Scale(Math.Int(cur.raw.GetWidth()*scale), Math.Int(cur.raw.GetHeight()*scale));
 cur.sprite = Sprite(cur.image);
 cur.sprite.SetZ(6);
 # log follows the real boot progress: each line appears as boot passes its mark
@@ -127,6 +135,6 @@ fun refresh(){
   cur.sprite.SetY(logy + row * lh);
   if ((Math.Int(tick / 22) % 2) == 0) cur.sprite.SetOpacity(0.85);
   else cur.sprite.SetOpacity(0);
-  crtfx();
+  if (crt) crtfx();
 }
 Plymouth.SetRefreshFunction(refresh);

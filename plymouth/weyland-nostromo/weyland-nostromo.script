@@ -16,18 +16,23 @@ bg.sprite.SetX((sw - bw) / 2); bg.sprite.SetY((sh - bh) / 2); bg.sprite.SetZ(-10
 
 # ---- CRT effect: rolling scanline grille + soft phosphor sweep band ----
 # (plymouth has no shader; this is the closest a sprite engine gets to a live CRT)
-grille.image = Image("crt_grille.png").Scale(sw, sh + 12);
-grille.sprite = Sprite(grille.image);
-grille.sprite.SetX(0); grille.sprite.SetZ(50);
-band.h = Math.Int(sh * 0.20);
-band.image = Image("crt_band.png").Scale(sw, band.h);
-band.sprite = Sprite(band.image);
-band.sprite.SetX(0); band.sprite.SetZ(49);
+# crt = 1 -> overlay on (the "CRT line" theme variant). The "no CRT line" variant sets crt = 0.
+# The sweep is a free-running loop off `tick` (never tied to boot progress).
+crt = 1;
+if (crt) {
+  grille.image = Image("crt_grille.png").Scale(sw, sh + 12);
+  grille.sprite = Sprite(grille.image);
+  grille.sprite.SetX(0); grille.sprite.SetZ(50);
+  band.h = Math.Int(sh * 0.20);
+  band.image = Image("crt_band.png").Scale(sw, band.h);
+  band.sprite = Sprite(band.image);
+  band.sprite.SetX(0); band.sprite.SetZ(49);
+}
 tick = 0;
 fun crtfx(){
   grille.sprite.SetY(0 - (tick % 12));
   grille.sprite.SetOpacity(0.16 + 0.05 * Math.Sin(tick / 6));
-  band.sprite.SetY((tick * 3) % (sh + band.h) - band.h);
+  band.sprite.SetY((tick * 4) % (sh + band.h) - band.h);
   band.sprite.SetOpacity(0.10);
 }
 
@@ -98,6 +103,6 @@ fun refresh(){
   if (idx > RISE) idx = RISE;
   if (anim.hide == 1) anim.sprite.SetOpacity(0);
   else { anim.sprite.SetOpacity(1); anim.sprite.SetImage(anim.frame[idx]); }
-  crtfx();
+  if (crt) crtfx();
 }
 Plymouth.SetRefreshFunction(refresh);

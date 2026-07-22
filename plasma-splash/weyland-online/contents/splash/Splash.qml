@@ -7,6 +7,7 @@ import QtQuick
 
 Image {
     id: root
+    property real uiScale: 1.0   // 0.8 = Small, 1.0 = Medium, 1.25 = Large
     source: "images/background.png"
     fillMode: Image.PreserveAspectCrop
 
@@ -17,13 +18,13 @@ Image {
 
     Column {
         anchors.centerIn: parent
-        spacing: Math.round(root.height * 0.04)
+        spacing: Math.round(root.height * root.uiScale * 0.04)
 
         Image {
             id: emblem
             source: "images/emblem_glow.png"
             anchors.horizontalCenter: parent.horizontalCenter
-            width: Math.round(root.width * 0.40)
+            width: Math.round(root.height * 0.71)   // emblem stays a fixed size (not affected by uiScale)
             fillMode: Image.PreserveAspectFit
             smooth: true
             opacity: 0
@@ -49,7 +50,7 @@ Image {
             color: "#7dff96"
             anchors.horizontalCenter: parent.horizontalCenter
             font.family: root.monoFamily
-            font.pixelSize: Math.round(root.height * 0.034)
+            font.pixelSize: Math.round(root.height * root.uiScale * 0.034)
             font.letterSpacing: 8
             opacity: 0
             // fades in at the start, together with the emblem

@@ -14,9 +14,47 @@ Contents:
   plymouth/weyland-console  boot splash: typed green log + blinking cursor
   plymouth/weyland-bar      boot splash: progress bar
   plymouth/weyland-standby  boot splash: segmented "standby" meter
-  (every splash has the rolling CRT scanlines + sweep band)
+  (every splash has the rolling CRT scanlines + sweep band — optional, see VARIANTS)
+  optimized/                a 14x-smaller copy of every 5120x1440 background (see VARIANTS)
 
 Run everything from inside this unzipped folder (cd into it first).
+
+--------------------------------------------------------------------
+VARIANTS — two optional switches (index.html sets these for you)
+--------------------------------------------------------------------
+The command blocks below install the DEFAULT build: native-resolution
+backgrounds WITH the CRT line. Two independent switches change that; the
+index.html picker adds the extra lines automatically, or apply by hand:
+
+* Backgrounds — NATIVE vs OPTIMIZED
+  Every background is 5120x1440 and crop-fits to any screen. "Native" are
+  full-quality PNGs (~4 MB each); "Optimized" look identical but are ~14x
+  smaller (~290 KB), which also shrinks the boot image. To use the optimized
+  set, copy it over the theme's background AFTER the cp step and BEFORE the
+  activation step (plymouth-set-default-theme / grub2-mkconfig), e.g.:
+    boot splash: sudo cp optimized/plymouth/<name>/background.png /usr/share/plymouth/themes/<name>/background.png
+    GRUB:        sudo cp optimized/grub/background.png /boot/grub2/themes/weyland-crt/background.png
+    Plasma:      cp optimized/plasma-splash/<name>/contents/splash/images/background.png ~/.local/share/plasma/look-and-feel/<name>/contents/splash/images/background.png
+
+* CRT line — ON vs OFF
+  To drop the moving CRT overlay (scanline grille + sweep band) from a splash,
+  flip its flag AFTER copying it in:
+    boot splash: sudo sed -i 's/^crt = 1;/crt = 0;/' /usr/share/plymouth/themes/<name>/<name>.script
+    Plasma:      sed -i 's/property bool crt: true/property bool crt: false/' ~/.local/share/plasma/look-and-feel/<name>/contents/splash/Splash.qml
+  (GRUB has no CRT overlay, so this doesn't apply there; the Plasma "System
+  Online" splash is already clean.)
+
+* Splash size — SMALL / MEDIUM / LARGE
+  Scales the CONTENT (console text, progress bar, power gauge, standby meter, the
+  ONLINE text) — the Weyland emblem stays a fixed size, EXCEPT Emblem Ignition,
+  whose whole content is the emblem. Default is MEDIUM. Set it AFTER copying in
+  (0.8 = Small, 1.25 = Large):
+    boot splash: sudo sed -i 's/^scale = 1.0;/scale = 0.8;/' /usr/share/plymouth/themes/<name>/<name>.script
+    Plasma:      sed -i 's/property real uiScale: 1.0/property real uiScale: 0.8/' ~/.local/share/plasma/look-and-feel/<name>/contents/splash/Splash.qml
+  Notes: the Nostromo and System-Online BOOT splashes bake the emblem into their
+  animation frames, so they have no scale line (their emblem must stay fixed); their
+  Plasma versions still scale the gauge / ONLINE text. GRUB uses its own menu-font
+  variants above, not this scale.
 
 --------------------------------------------------------------------
 1) GRUB MENU
@@ -28,6 +66,11 @@ sudo cp -rT grub /boot/grub2/themes/weyland-crt
 # point GRUB at it (safe to re-run)
 sudo sed -i '/^GRUB_THEME=/d' /etc/default/grub
 echo 'GRUB_THEME="/boot/grub2/themes/weyland-crt/theme.txt"' | sudo tee -a /etc/default/grub
+# MENU FONT — the theme ships three menu-font layouts; use theme.txt above, or swap in one of
+# these on that line (then re-run the grub2-mkconfig step) if the entries look too small/off:
+#   theme.txt          default  — Share Tech Mono 16
+#   theme-bigfont.txt  bigger   — Share Tech Mono 24 (more readable)
+#   theme-altfont.txt  alt font — JetBrains Mono 18 (different typeface)
 
 # Nobara ships a text-only menu + hidden menu — turn both off (only needed once)
 sudo sed -i 's/^GRUB_TERMINAL_OUTPUT=/#&/' /etc/default/grub

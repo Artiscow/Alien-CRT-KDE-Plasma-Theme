@@ -6,6 +6,7 @@
 <title>Weyland-Yutani CRT — preview &amp; select</title>
 <style>
   @font-face{ font-family:'Share Tech Mono'; src:url('share-tech-mono.woff2') format('woff2'); font-display:swap; }
+  @font-face{ font-family:'JetBrains Mono'; src:url('jetbrains-mono.woff2') format('woff2'); font-display:swap; }
   :root{ --fg:#3bd16f; --bright:#7dff96; --dim:rgba(90,255,120,.45); --panel:#06140a; }
   *{ box-sizing:border-box; }
   body{ margin:0; background:#000; color:var(--fg); font-family:'Share Tech Mono',monospace;
@@ -43,9 +44,19 @@
 
   /* cinematic splashes — centered frame sequences drawn at native px (like Plymouth) */
   .cine{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:10; }
-  #v-nostromo{ width:57.29cqw; } #v-ignition{ width:46.88cqw; } #v-online{ width:46.88cqw; }
+  #v-ignition{ width:46.88cqw; }
   /* MU-TH-UR is a terminal console — left-anchored (left set by JS to sw*0.16), not centered */
   #v-muthur{ width:62.50cqw; left:16cqw; transform:translateY(-50%); }
+  /* Nostromo / System Online: live composites (like the real Plasma splash) — the emblem is a FIXED
+     size (cqh, = root.height*0.60/0.71), and only the content scales via the --s variable set by SIZE. */
+  .cine.live{ display:flex; flex-direction:column; align-items:center; }
+  .nos-emblem{ width:60cqh; } .onl-emblem{ width:71cqh; }
+  .lv-cap{ color:var(--fg); letter-spacing:.28em; margin-top:4.5cqh; text-shadow:0 0 .8cqh rgba(70,255,115,.6); font-size:calc(2.6cqh * var(--s,1)); }
+  .lv-gauge{ display:flex; margin-top:2.6cqh; gap:calc(0.7cqh * var(--s,1)); }
+  .lv-gauge i{ display:block; background:var(--fg); opacity:.12; width:calc(4.6cqh * var(--s,1)); height:calc(2.4cqh * var(--s,1)); }
+  .lv-gauge i.on{ opacity:1; box-shadow:0 0 1cqh rgba(60,255,110,.55); }
+  .lv-pct{ color:var(--bright); letter-spacing:.22em; margin-top:2.6cqh; font-size:calc(2.4cqh * var(--s,1)); }
+  .lv-online{ color:var(--bright); letter-spacing:.55em; margin-top:5cqh; font-size:calc(3.4cqh * var(--s,1)); }
 
   /* grub */
   .grub{ position:absolute; inset:0; z-index:10; font-size:1.75cqh; color:var(--fg); }
@@ -104,7 +115,20 @@
   <div class="sub">NOSTROMO // NOBARA BOOT THEME — PREVIEW &amp; SELECT</div>
 
   <div class="controls">
-    <label>SCREEN
+    <label>CRT LINE
+      <select id="crt">
+        <option value="on" selected>ON</option>
+        <option value="off">OFF</option>
+      </select>
+    </label>
+    <label>SIZE
+      <select id="size">
+        <option value="0.8">SMALL</option>
+        <option value="1.0" selected>MEDIUM</option>
+        <option value="1.25">LARGE</option>
+      </select>
+    </label>
+    <label>RESOLUTION
       <select id="res">
         <option data-w="1920" data-h="1200" selected>1920 × 1200 · 16:10</option>
         <option data-w="1920" data-h="1080">1920 × 1080 · 16:9</option>
@@ -113,7 +137,8 @@
         <option data-w="2560" data-h="1600">2560 × 1600 · 16:10</option>
         <option data-w="3440" data-h="1440">3440 × 1440 · 21:9 ultrawide</option>
         <option data-w="3840" data-h="2160">3840 × 2160 · 16:9 · 4K</option>
-        <option data-w="5120" data-h="1440">5120 × 1440 · 32:9</option>
+        <option data-w="5120" data-h="1440" data-opt="0">5120 × 1440 · 32:9 · Native</option>
+        <option data-w="5120" data-h="1440" data-opt="1">5120 × 1440 · 32:9 · Optimized</option>
       </select>
     </label>
   </div>
@@ -126,11 +151,20 @@
     <div class="barwrap hidden" id="v-bar"><div class="bartrack"><div class="barfill" id="barfill"></div></div></div>
     <!-- standby -->
     <img class="std hidden" id="v-standby" src="plymouth/weyland-standby/frame-0.png" alt="">
-    <!-- cinematic splashes (centered frame sequences) -->
+    <!-- MU-TH-UR & Emblem Ignition: pre-rendered frame sequences (scale as a whole) -->
     <img class="cine hidden" id="v-muthur" src="plymouth/weyland-muthur/frame-0.png" alt="">
-    <img class="cine hidden" id="v-nostromo" src="plymouth/weyland-nostromo/frame-0.png" alt="">
     <img class="cine hidden" id="v-ignition" src="plymouth/weyland-ignition/frame-0.png" alt="">
-    <img class="cine hidden" id="v-online" src="plymouth/weyland-online/frame-0.png" alt="">
+    <!-- Nostromo & System Online: live composites — fixed emblem + separately-scaling content -->
+    <div class="cine live hidden" id="v-nostromo">
+      <img class="nos-emblem" src="plasma-splash/weyland-nostromo/contents/splash/images/emblem_glow.png" alt="">
+      <div class="lv-cap">NOSTROMO // MAIN BUS ENERGIZING</div>
+      <div class="lv-gauge" id="nosgauge"></div>
+      <div class="lv-pct" id="nospct">0%</div>
+    </div>
+    <div class="cine live hidden" id="v-online">
+      <img class="onl-emblem" src="plasma-splash/weyland-online/contents/splash/images/emblem_glow.png" alt="">
+      <div class="lv-online" id="onltxt">O N L I N E</div>
+    </div>
     <!-- grub -->
     <div class="grub hidden" id="v-grub">
       <div class="title"><img src="grub/title.png" alt=""></div>
@@ -150,8 +184,12 @@
     <div class="section">
       <div class="seclabel">1 · GRUB BOOT MENU <span class="hint">— the entry picker, first thing you see · optional</span></div>
       <div class="row">
-        <button class="card" data-group="grub" data-tab="grub">
-          <div class="k">GRUB MENU</div><div class="d">Themed boot menu — click to include</div></button>
+        <button class="card" data-group="grub" data-v="" data-tab="grub">
+          <div class="k">GRUB MENU</div><div class="d">Share Tech Mono — the standard menu</div></button>
+        <button class="card" data-group="grub" data-v="big" data-tab="grub">
+          <div class="k">GRUB · BIGGER FONT</div><div class="d">Same font, larger &amp; easier to read</div></button>
+        <button class="card" data-group="grub" data-v="alt" data-tab="grub">
+          <div class="k">GRUB · ALT FONT</div><div class="d">JetBrains Mono — a different typeface</div></button>
       </div>
     </div>
 
@@ -234,21 +272,48 @@
     ENTRIES.forEach(function(t,i){ var d=document.createElement('div'); d.className='item'+(i===0?' sel':''); d.textContent=t; m.appendChild(d); });
   })();
 
-  // cinematic splashes: preload each frame sequence for playback
-  var CINE={ muthur:{n:40,w:1200}, nostromo:{n:40,w:1100}, ignition:{n:40,w:900}, online:{n:40,w:900} };
+  // frame-sequence splashes (MU-TH-UR console, Emblem Ignition) — preload for playback.
+  // Nostromo & System Online are NOT here: they're live composites (fixed emblem + scaling content).
+  var CINE={ muthur:{n:40,w:1200}, ignition:{n:40,w:900} };
   var cineCache={}, cineImg={};
   for(var ck in CINE){ cineCache[ck]=[]; cineImg[ck]=document.getElementById('v-'+ck);
     for(var ci=0;ci<CINE[ck].n;ci++){ var cim=new Image(); cim.src='plymouth/weyland-'+ck+'/frame-'+ci+'.png'; cineCache[ck][ci]=cim; } }
+  // live composites: element refs + the 24-segment Nostromo gauge
+  var nosEl=document.getElementById('v-nostromo'), onlEl=document.getElementById('v-online');
+  var nospct=document.getElementById('nospct'), onltxt=document.getElementById('onltxt');
+  var nosBars=[]; (function(){ var g=document.getElementById('nosgauge');
+    for(var i=0;i<24;i++){ var b=document.createElement('i'); g.appendChild(b); nosBars.push(b); } })();
 
   var tab='ignition', selected=null;   // single selection across all groups: "group:value"
   var bgImg=document.querySelector('.bg');
   var crtBand=document.querySelector('.band'), crtGrille=document.querySelector('.grille');
+
+  // ---- theme-variant state ----
+  // useOpt : native (false) vs optimized (true) 5120x1440 image set — chosen in the RESOLUTION menu.
+  // crtOn  : whether the CRT sweep band + scanline grille are part of the build.
+  // curNoCrt: this splash never has a CRT overlay (grub / the clean System-Online plasma splash).
+  var useOpt=false, crtOn=true, curNoCrt=false, cleanOnlineView=false, uiScale=1.0;
+  function bgBase(){ return useOpt ? 'optimized/' : ''; }           // optimized backgrounds mirror the native paths
+  function applyCrt(){ var hide = !crtOn || curNoCrt;
+    crtBand.style.display = hide?'none':''; crtGrille.style.display = hide?'none':''; }
+
+  // ---- GRUB menu-font variants (default / bigger / alternate typeface) ----
+  // Mirrors the three grub/theme*.txt files: default = Share Tech Mono 16, big = Share Tech Mono 24,
+  // alt = JetBrains Mono 18. The preview restyles the live menu to match each.
+  var grubmenu=document.getElementById('grubmenu');
+  var GRUBV={ '':  {size:'1.75cqh', fam:'',                        gap:'1.4cqh'},
+              big: {size:'2.60cqh', fam:'',                        gap:'1.9cqh'},
+              alt: {size:'1.95cqh', fam:"'JetBrains Mono', monospace", gap:'1.5cqh'} };
+  function applyGrubVariant(gv){ var p=GRUBV[gv]||GRUBV[''];
+    grubmenu.style.fontSize=p.size; grubmenu.style.gap=p.gap; grubmenu.style.fontFamily=p.fam; }
+
   var views={ console:document.getElementById('v-console'), bar:document.getElementById('v-bar'),
               standby:stdImg, grub:document.getElementById('v-grub'),
-              muthur:cineImg.muthur, nostromo:cineImg.nostromo, ignition:cineImg.ignition, online:cineImg.online };
+              muthur:cineImg.muthur, nostromo:nosEl, ignition:cineImg.ignition, online:onlEl };
+  // these four use their own plain CRT background (no baked emblem); everything else the emblem wallpaper
+  var PLAINBG={muthur:1, nostromo:1, ignition:1, online:1};
   function show(t){ tab=t; for(var k in views){ views[k].classList.toggle('hidden', k!==t); }
-    // cinematic splashes use the plain CRT background (no baked emblem); everything else the emblem wallpaper
-    bgImg.src = CINE[t] ? 'plymouth/weyland-'+t+'/background.png' : 'plymouth/weyland-standby/background.png'; }
+    bgImg.src = bgBase() + (PLAINBG[t] ? 'plymouth/weyland-'+t+'/background.png' : 'plymouth/weyland-standby/background.png'); }
 
   // ---- resolution / aspect selector ----
   // The theme crop-fits the background, so ONE build works at every resolution.
@@ -258,45 +323,72 @@
   var stage=document.getElementById('stage');
   var barwrap=document.getElementById('v-bar');
   var resSel=document.getElementById('res');
+  var crtSel=document.getElementById('crt');
   function applyRes(){
     var o=resSel.options[resSel.selectedIndex];
     var W=+o.getAttribute('data-w'), H=+o.getAttribute('data-h');
+    useOpt = o.getAttribute('data-opt')==='1';     // "5120 × 1440 · Optimized" entry
     stage.style.aspectRatio = W+' / '+H;
-    stdImg.style.width = Math.max(9, 760/W*100).toFixed(2)+'cqw';
-    barwrap.style.width = Math.min(60, 44/(W/H)).toFixed(2)+'cqw';
-    for(var ck in CINE){ cineImg[ck].style.width = (CINE[ck].w/W*100).toFixed(2)+'cqw'; }
-    // MU-TH-UR console is left-anchored (matches weyland-muthur.script: SetX(sw*0.16 - 40))
-    cineImg.muthur.style.left = ((0.16 - 40/W)*100).toFixed(2)+'cqw';
+    stdImg.style.width = (Math.max(9, 760/W*100) * uiScale).toFixed(2)+'cqw';
+    barwrap.style.width = (Math.min(60, 44/(W/H)) * uiScale).toFixed(2)+'cqw';
+    // MU-TH-UR console + Emblem Ignition scale as a whole frame
+    for(var ck in CINE){ cineImg[ck].style.width = (CINE[ck].w/W*100 * uiScale).toFixed(2)+'cqw'; }
+    // Nostromo / Online live composites: emblem is fixed (CSS cqh); only content scales via --s
+    nosEl.style.setProperty('--s', uiScale); onlEl.style.setProperty('--s', uiScale);
+    views.console.style.fontSize = (2.2 * uiScale).toFixed(2)+'cqh';   // matches console script confont scaling
+    // MU-TH-UR console is left-anchored (matches weyland-muthur.script: SetX(sw*0.16 - 40*scale))
+    cineImg.muthur.style.left = ((0.16 - 40*uiScale/W)*100).toFixed(2)+'cqw';
+    show(tab);                                     // reload bg from the chosen native/optimized set
+    if(cleanOnlineView) bgImg.src = bgBase()+'plasma-splash/weyland-online/contents/splash/images/background.png';
+    render();
   }
+  var sizeSel=document.getElementById('size');
   resSel.addEventListener('change', applyRes);
+  crtSel.addEventListener('change', function(){ crtOn = crtSel.value==='on'; applyCrt(); render(); });
+  sizeSel.addEventListener('change', function(){ uiScale = parseFloat(sizeSel.value); applyRes(); });
   applyRes();
+  // variant tag shown as a comment on the header line, e.g. "  [optimized, no CRT line, large]"
+  function sizeName(){ return uiScale==0.8 ? 'small' : uiScale==1.25 ? 'large' : 'medium'; }
+  function variantTag(){ var a=[useOpt?'optimized':'native']; if(!crtOn) a.push('no CRT line');
+    if(uiScale!=1.0) a.push(sizeName()+' size'); return '   ['+a.join(', ')+']'; }
   function applyCmd(v){
-    return '# BOOT SPLASH — '+v+'\n'
-      + 'sudo rm -rf /usr/share/plymouth/themes/'+v+'\n'
-      + 'sudo cp -rT plymouth/'+v+' /usr/share/plymouth/themes/'+v+'\n'
-      + 'sudo plymouth-set-default-theme -R '+v;
+    var d='/usr/share/plymouth/themes/'+v, L=['# BOOT SPLASH — '+v+variantTag(),
+      'sudo rm -rf '+d, 'sudo cp -rT plymouth/'+v+' '+d];
+    if(useOpt) L.push('sudo cp optimized/plymouth/'+v+'/background.png '+d+'/background.png   # 5120×1440 optimized');
+    if(!crtOn) L.push("sudo sed -i 's/^crt = 1;/crt = 0;/' "+d+'/'+v+'.script   # drop the CRT line');
+    // Nostromo/Online bake the emblem into the animation frames, so they have no size scale (emblem stays fixed)
+    var scales = (v!=='weyland-nostromo' && v!=='weyland-online');
+    if(uiScale!=1.0 && scales) L.push("sudo sed -i 's/^scale = 1.0;/scale = "+uiScale+";/' "+d+'/'+v+'.script   # '+sizeName()+' size');
+    if(uiScale!=1.0 && !scales) L.push('# ('+sizeName()+' size not applied — '+v+"'s emblem is baked into the animation)");
+    L.push('sudo plymouth-set-default-theme -R '+v);
+    return L.join('\n');
   }
-  function grubCmd(){
-    return '# GRUB — themed boot menu\n'
-      + 'sudo rm -rf /boot/grub2/themes/weyland-crt\n'
-      + 'sudo mkdir -p /boot/grub2/themes\n'
-      + 'sudo cp -rT grub /boot/grub2/themes/weyland-crt\n'
-      + "sudo sed -i '/^GRUB_THEME=/d' /etc/default/grub\n"
-      + 'echo \'GRUB_THEME="/boot/grub2/themes/weyland-crt/theme.txt"\' | sudo tee -a /etc/default/grub\n'
-      + "sudo sed -i 's/^GRUB_TERMINAL_OUTPUT=/#&/' /etc/default/grub\n"
-      + "grep -q '^GRUB_GFXMODE=' /etc/default/grub || echo 'GRUB_GFXMODE=auto' | sudo tee -a /etc/default/grub\n"
-      + "# keep GRUB's graphics mode straight into Plymouth (no black flash after selecting)\n"
-      + "grep -q '^GRUB_GFXPAYLOAD_LINUX=' /etc/default/grub || echo 'GRUB_GFXPAYLOAD_LINUX=keep' | sudo tee -a /etc/default/grub\n"
-      + 'sudo grub2-editenv - unset menu_auto_hide\n'
-      + 'sudo grub2-mkconfig -o /boot/grub2/grub.cfg';
+  function grubCmd(gv){
+    var d='/boot/grub2/themes/weyland-crt';
+    var theme = gv==='big' ? 'theme-bigfont.txt' : gv==='alt' ? 'theme-altfont.txt' : 'theme.txt';
+    var fontNote = gv==='big' ? '   # bigger font (Share Tech Mono 24)' : gv==='alt' ? '   # alt font (JetBrains Mono 18)' : '';
+    var L=['# GRUB — themed boot menu'+variantTag()+fontNote,
+      'sudo rm -rf '+d, 'sudo mkdir -p /boot/grub2/themes', 'sudo cp -rT grub '+d];
+    if(useOpt) L.push('sudo cp optimized/grub/background.png '+d+'/background.png   # 5120×1440 optimized');
+    L.push("sudo sed -i '/^GRUB_THEME=/d' /etc/default/grub",
+      'echo \'GRUB_THEME="'+d+'/'+theme+'"\' | sudo tee -a /etc/default/grub',
+      "sudo sed -i 's/^GRUB_TERMINAL_OUTPUT=/#&/' /etc/default/grub",
+      "grep -q '^GRUB_GFXMODE=' /etc/default/grub || echo 'GRUB_GFXMODE=auto' | sudo tee -a /etc/default/grub",
+      "# keep GRUB's graphics mode straight into Plymouth (no black flash after selecting)",
+      "grep -q '^GRUB_GFXPAYLOAD_LINUX=' /etc/default/grub || echo 'GRUB_GFXPAYLOAD_LINUX=keep' | sudo tee -a /etc/default/grub",
+      'sudo grub2-editenv - unset menu_auto_hide', 'sudo grub2-mkconfig -o /boot/grub2/grub.cfg');
+    return L.join('\n');   // GRUB has no CRT overlay, so the CRT toggle doesn't affect it
   }
   function plasmaCmd(v){
-    return '# PLASMA SPLASH — '+v+' (KDE, shown after login while the desktop loads)\n'
-      + 'mkdir -p ~/.local/share/plasma/look-and-feel\n'
-      + 'cp -r plasma-splash/'+v+' ~/.local/share/plasma/look-and-feel/\n'
-      + 'kbuildsycoca6\n'
-      + 'kwriteconfig6 --file ksplashrc --group KSplash --key Engine KSplashQML\n'
-      + 'kwriteconfig6 --file ksplashrc --group KSplash --key Theme '+v;
+    var d='~/.local/share/plasma/look-and-feel/'+v, img=d+'/contents/splash/images', L=[
+      '# PLASMA SPLASH — '+v+' (KDE, shown after login while the desktop loads)'+variantTag(),
+      'mkdir -p ~/.local/share/plasma/look-and-feel', 'cp -r plasma-splash/'+v+' ~/.local/share/plasma/look-and-feel/'];
+    if(useOpt) L.push('cp optimized/plasma-splash/'+v+'/contents/splash/images/background.png '+img+'/background.png   # 5120×1440 optimized');
+    if(!crtOn && v!=='weyland-online') L.push("sed -i 's/property bool crt: true/property bool crt: false/' "+d+'/contents/splash/Splash.qml   # drop the CRT line');
+    if(uiScale!=1.0) L.push("sed -i 's/property real uiScale: 1.0/property real uiScale: "+uiScale+"/' "+d+'/contents/splash/Splash.qml   # '+sizeName()+' size');
+    L.push('kbuildsycoca6', 'kwriteconfig6 --file ksplashrc --group KSplash --key Engine KSplashQML',
+      'kwriteconfig6 --file ksplashrc --group KSplash --key Theme '+v);
+    return L.join('\n');
   }
 
   // ---- simulated boot: prog 0->1 over 6s, hold 1.6s, repeat ----
@@ -318,6 +410,12 @@
     if(tab==='standby'){ var idx=Math.min(RISE, Math.round(prog*RISE)); stdImg.src=cache[idx].src; }
     // cinematic splashes (frame sequence follows boot progress)
     if(CINE[tab]){ var cn=CINE[tab].n, cidx=Math.min(cn-1, Math.round(prog*(cn-1))); cineImg[tab].src=cineCache[tab][cidx].src; }
+    // Nostromo live gauge (fills with progress) + percentage
+    if(tab==='nostromo'){ var lit=Math.round(prog*24);
+      for(var gi=0;gi<24;gi++){ nosBars[gi].classList.toggle('on', gi<lit); }
+      nospct.textContent=Math.round(prog*100)+'%'; }
+    // System Online: ONLINE text powers on at the start
+    if(tab==='online'){ onltxt.style.opacity=Math.min(1, prog*3).toFixed(2); }
     // grub countdown
     if(tab==='grub'){ var s=5-Math.floor(((now-t0)/1000)%6); if(s<0)s=0;
       document.getElementById('grubcount').innerHTML='The highlighted entry will boot automatically in '+s+'&nbsp;s.'; }
@@ -334,21 +432,22 @@
     var cmd;
     if(!selected){ cmd='Select what to install above.'; }
     else { var p=selected.split(':'), g=p[0], v=p[1];
-      cmd = g==='grub' ? grubCmd() : g==='plasma' ? plasmaCmd(v) : applyCmd(v); }
+      cmd = g==='grub' ? grubCmd(v) : g==='plasma' ? plasmaCmd(v) : applyCmd(v); }
     document.getElementById('cmd').textContent = cmd;
   }
   function pick(card){
     var g=card.getAttribute('data-group'), v=card.getAttribute('data-v');
     show(card.getAttribute('data-tab'));
+    if(g==='grub') applyGrubVariant(v);                  // restyle the live menu to the chosen font variant
     cards.forEach(function(c){ c.classList.remove('viewing'); });
     card.classList.add('viewing');                       // highlight exactly the card you're viewing
     // the Plasma "System Online" splash has no CRT and a clean background — preview it that way.
     // GRUB also has no CRT overlay in the real theme (no scanline band / grille), so drop it there too.
     var cleanOnline = (g==='plasma' && v==='weyland-online');
-    var noCrt = cleanOnline || g==='grub';
-    crtBand.style.display = noCrt ? 'none' : '';
-    crtGrille.style.display = noCrt ? 'none' : '';
-    if(cleanOnline) bgImg.src = 'plasma-splash/weyland-online/contents/splash/images/background.png';
+    cleanOnlineView = cleanOnline;
+    curNoCrt = cleanOnline || g==='grub';
+    applyCrt();
+    if(cleanOnline) bgImg.src = bgBase()+'plasma-splash/weyland-online/contents/splash/images/background.png';
     if(card.hasAttribute('data-preview')){ return; }     // preview-only (boot box): never installs
     var k=keyOf(card);
     selected = (selected===k) ? null : k;                // toggle single selection

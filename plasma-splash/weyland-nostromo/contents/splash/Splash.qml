@@ -8,6 +8,8 @@ import QtQuick
 
 Image {
     id: root
+    property bool crt: true   // false = "no CRT line" theme variant
+    property real uiScale: 1.0   // 0.8 = Small, 1.0 = Medium, 1.25 = Large
     source: "images/background.png"
     fillMode: Image.PreserveAspectCrop
 
@@ -20,13 +22,13 @@ Image {
 
     Column {
         anchors.centerIn: parent
-        spacing: Math.round(root.height * 0.045)
+        spacing: Math.round(root.height * root.uiScale * 0.045)
 
         Image {
             id: emblem
             source: "images/emblem_glow.png"
             anchors.horizontalCenter: parent.horizontalCenter
-            width: Math.round(root.width * 0.34)
+            width: Math.round(root.height * 0.60)   // emblem stays a fixed size (not affected by uiScale)
             fillMode: Image.PreserveAspectFit
             smooth: true
             SequentialAnimation on scale {
@@ -42,18 +44,18 @@ Image {
             color: "#3bd16f"
             anchors.horizontalCenter: parent.horizontalCenter
             font.family: root.monoFamily
-            font.pixelSize: Math.round(root.height * 0.026)
+            font.pixelSize: Math.round(root.height * root.uiScale * 0.026)
             font.letterSpacing: 4
         }
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter
-            spacing: Math.round(root.width * 0.004)
+            spacing: Math.round(root.height * root.uiScale * 0.007)   // height-based (was width-based → too wide on 32:9)
             Repeater {
                 model: 24
                 Rectangle {
-                    width: Math.round(root.width * 0.026)
-                    height: Math.round(root.height * 0.024)
+                    width: Math.round(root.height * root.uiScale * 0.046)
+                    height: Math.round(root.height * root.uiScale * 0.024)
                     color: "#3bd16f"
                     opacity: index < Math.round(root.prog * 24) ? 1.0 : 0.12
                     Behavior on opacity { NumberAnimation { duration: 160 } }
@@ -66,7 +68,7 @@ Image {
             color: "#7dff96"
             anchors.horizontalCenter: parent.horizontalCenter
             font.family: root.monoFamily
-            font.pixelSize: Math.round(root.height * 0.024)
+            font.pixelSize: Math.round(root.height * root.uiScale * 0.024)
             font.letterSpacing: 3
         }
     }
@@ -76,6 +78,7 @@ Image {
     // never freezes on the first cycle before the splash window has its real dimensions.
     Image {
         id: band
+        visible: root.crt
         x: 0; width: parent.width
         height: Math.round(parent.height * 0.20)
         source: "images/crt_band.png"
@@ -87,6 +90,7 @@ Image {
     }
     Image {
         id: grille
+        visible: root.crt
         x: 0; width: parent.width
         height: parent.height + 16
         source: "images/crt_grille.png"

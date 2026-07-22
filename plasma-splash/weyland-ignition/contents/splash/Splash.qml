@@ -7,6 +7,8 @@ import QtQuick
 
 Image {
     id: root
+    property bool crt: true   // false = "no CRT line" theme variant
+    property real uiScale: 1.0   // 0.8 = Small, 1.0 = Medium, 1.25 = Large
     source: "images/background.png"
     fillMode: Image.PreserveAspectCrop
 
@@ -16,7 +18,7 @@ Image {
         id: emblem
         source: "images/emblem_glow.png"
         anchors.centerIn: parent
-        width: Math.round(root.width * 0.42)
+        width: Math.round(root.height * root.uiScale * 0.75)   // height-based so it doesn't sprawl on ultrawide
         fillMode: Image.PreserveAspectFit
         smooth: true
         opacity: 0
@@ -41,6 +43,7 @@ Image {
     // never freezes on the first cycle before the splash window has its real dimensions.
     Image {
         id: band
+        visible: root.crt
         x: 0; width: parent.width
         height: Math.round(parent.height * 0.20)
         source: "images/crt_band.png"
@@ -52,6 +55,7 @@ Image {
     }
     Image {
         id: grille
+        visible: root.crt
         x: 0; width: parent.width
         height: parent.height + 16
         source: "images/crt_grille.png"

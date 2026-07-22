@@ -8,6 +8,8 @@ import QtQuick
 
 Image {
     id: root
+    property bool crt: true      // false = "no CRT line" theme variant
+    property real uiScale: 1.0   // splash size: 0.8 = Small, 1.0 = Medium, 1.25 = Large
     source: "images/background.png"
     fillMode: Image.PreserveAspectCrop
 
@@ -71,7 +73,7 @@ Image {
         id: log
         x: Math.round(root.width * 0.16)
         y: Math.round(root.height * 0.24)
-        spacing: Math.round(root.height * 0.013)
+        spacing: Math.round(root.height * root.uiScale * 0.013)
         Repeater {
             model: root.lines
             Text {
@@ -80,13 +82,13 @@ Image {
                 // completion lines (ALL SYSTEMS NOMINAL / STARTUP COMPLETE) glow brighter
                 color: index >= root.lines.length - 2 ? "#7dff96" : "#3bd16f"
                 font.family: root.monoFamily
-                font.pixelSize: Math.round(root.height * 0.028)
+                font.pixelSize: Math.round(root.height * 0.019 * root.uiScale)   // base size; uiScale = S/M/L
             }
         }
         Rectangle {   // blinking cursor, follows the last revealed line (keeps blinking when done)
             visible: root.started
-            width: Math.round(root.height * 0.015)
-            height: Math.round(root.height * 0.030)
+            width: Math.round(root.height * root.uiScale * 0.015)
+            height: Math.round(root.height * root.uiScale * 0.030)
             color: "#7dff96"
             SequentialAnimation on opacity {
                 running: true; loops: Animation.Infinite
@@ -101,6 +103,7 @@ Image {
     // ---- CRT: rolling scanline grille + sweeping phosphor band ----
     Image {
         id: band
+        visible: root.crt
         x: 0; width: parent.width
         height: Math.round(parent.height * 0.20)
         source: "images/crt_band.png"
@@ -112,6 +115,7 @@ Image {
     }
     Image {
         id: grille
+        visible: root.crt
         x: 0; width: parent.width
         height: parent.height + 16
         source: "images/crt_grille.png"
