@@ -3,6 +3,8 @@ Window.SetBackgroundTopColor(0,0,0);
 Window.SetBackgroundBottomColor(0,0,0);
 sw = Window.GetWidth();
 sh = Window.GetHeight();
+scale = 1.0;    # splash size: 0.8 = Small, 1.0 = Medium, 1.25 = Large
+shrink = 0.83;  # base reduction to match the resized Plasma splash (emblem 0.60 -> 0.50)
 
 # cover-fit the background so it never distorts, at ANY screen aspect ratio
 bg.raw = Image("background.png");
@@ -84,10 +86,10 @@ Plymouth.SetDisplayNormalFunction(display_normal_cb);
 
 # ---- cinematic splash (pre-rendered frame sequence, centered) ----
 NUM_FRAMES = 40;
-for (i = 0; i < NUM_FRAMES; i++) anim.frame[i] = Image("frame-" + i + ".png");
+anim.w = Math.Int(Image("frame-0.png").GetWidth() * scale * shrink);
+anim.h = Math.Int(Image("frame-0.png").GetHeight() * scale * shrink);
+for (i = 0; i < NUM_FRAMES; i++) anim.frame[i] = Image("frame-" + i + ".png").Scale(anim.w, anim.h);
 anim.sprite = Sprite(anim.frame[0]);
-anim.w = anim.frame[0].GetWidth();
-anim.h = anim.frame[0].GetHeight();
 anim.sprite.SetX(sw/2 - anim.w/2);
 anim.sprite.SetY(sh*0.50 - anim.h/2);
 anim.sprite.SetZ(8);

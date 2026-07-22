@@ -40,12 +40,11 @@ Two independent switches change that; the index.html picker adds the extra lines
   (GRUB has no CRT overlay, so this doesn't apply there; the Plasma "System Online" splash is already clean.)
 
 * Splash size — SMALL / MEDIUM / LARGE
-  Scales the CONTENT (console text, progress bar, power gauge, standby meter, the ONLINE text) — the Weyland emblem stays a fixed size, EXCEPT Emblem Ignition, whose whole content is the emblem.
+  Scales the whole splash content: console text, progress bar, power gauge, standby meter, the ONLINE text, and the Weyland emblem.
   Default is MEDIUM.
   Set it AFTER copying in (0.8 = Small, 1.25 = Large):
     boot splash: sudo sed -i 's/^scale = 1.0;/scale = 0.8;/' /usr/share/plymouth/themes/<name>/<name>.script
     Plasma:      sed -i 's/property real uiScale: 1.0/property real uiScale: 0.8/' ~/.local/share/plasma/look-and-feel/<name>/contents/splash/Splash.qml
-  Notes: the Nostromo and System-Online BOOT splashes bake the emblem into their animation frames, so they have no scale line (their emblem must stay fixed); their Plasma versions still scale the gauge / ONLINE text.
   GRUB uses its own menu-font variants above, not this scale.
 
 --------------------------------------------------------------------

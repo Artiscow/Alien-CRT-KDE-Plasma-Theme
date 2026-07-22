@@ -47,14 +47,13 @@
   #v-ignition{ width:46.88cqw; }
   /* MU-TH-UR is a terminal console — left-anchored (left set by JS to sw*0.16), not centered */
   #v-muthur{ width:62.50cqw; left:16cqw; transform:translateY(-50%); }
-  /* Nostromo / System Online: live composites (like the real Plasma splash) — the emblem is a FIXED
-     size (cqh, = root.height*0.60/0.71), and only the content scales via the --s variable set by SIZE. */
+  /* Nostromo / System Online: live composites (like the real Plasma splash) — everything, emblem
+     included, scales via the --s variable set by SIZE (cqh base = root.height*0.50/0.60). */
   .cine.live{ display:flex; flex-direction:column; align-items:center; }
-  .nos-emblem{ width:60cqh; } .onl-emblem{ width:71cqh; }
+  .nos-emblem{ width:calc(50cqh * var(--s,1)); } .onl-emblem{ width:calc(60cqh * var(--s,1)); }
   .lv-cap{ color:var(--fg); letter-spacing:.28em; margin-top:4.5cqh; text-shadow:0 0 .8cqh rgba(70,255,115,.6); font-size:calc(2.6cqh * var(--s,1)); }
-  .lv-gauge{ display:flex; margin-top:2.6cqh; gap:calc(0.7cqh * var(--s,1)); }
-  .lv-gauge i{ display:block; background:var(--fg); opacity:.12; width:calc(4.6cqh * var(--s,1)); height:calc(2.4cqh * var(--s,1)); }
-  .lv-gauge i.on{ opacity:1; box-shadow:0 0 1cqh rgba(60,255,110,.55); }
+  .lv-gauge{ position:relative; margin-top:2.6cqh; width:calc(90cqh * var(--s,1)); height:max(2px, calc(1cqh * var(--s,1))); background:rgba(59,209,111,.12); }
+  .lv-gauge i{ display:block; height:100%; width:0; background:var(--fg); box-shadow:0 0 1cqh rgba(60,255,110,.55); }
   .lv-pct{ color:var(--bright); letter-spacing:.22em; margin-top:2.6cqh; font-size:calc(2.4cqh * var(--s,1)); }
   .lv-online{ color:var(--bright); letter-spacing:.55em; margin-top:5cqh; font-size:calc(3.4cqh * var(--s,1)); }
 
@@ -159,7 +158,7 @@
     <div class="cine live hidden" id="v-nostromo">
       <img class="nos-emblem" src="plasma-splash/weyland-nostromo/contents/splash/images/emblem_glow.png" alt="">
       <div class="lv-cap">NOSTROMO // MAIN BUS ENERGIZING</div>
-      <div class="lv-gauge" id="nosgauge"></div>
+      <div class="lv-gauge"><i id="nosfill"></i></div>
       <div class="lv-pct" id="nospct">0%</div>
     </div>
     <div class="cine live hidden" id="v-online">
@@ -282,8 +281,7 @@
   // live composites: element refs + the 24-segment Nostromo gauge
   var nosEl=document.getElementById('v-nostromo'), onlEl=document.getElementById('v-online');
   var nospct=document.getElementById('nospct'), onltxt=document.getElementById('onltxt');
-  var nosBars=[]; (function(){ var g=document.getElementById('nosgauge');
-    for(var i=0;i<24;i++){ var b=document.createElement('i'); g.appendChild(b); nosBars.push(b); } })();
+  var nosFill=document.getElementById('nosfill');
 
   var tab='ignition', selected=null;   // single selection across all groups: "group:value"
   var bgImg=document.querySelector('.bg');
@@ -334,7 +332,7 @@
     barwrap.style.width = (Math.min(60, 44/(W/H)) * uiScale).toFixed(2)+'cqw';
     // MU-TH-UR console + Emblem Ignition scale as a whole frame
     for(var ck in CINE){ cineImg[ck].style.width = (CINE[ck].w/W*100 * uiScale).toFixed(2)+'cqw'; }
-    // Nostromo / Online live composites: emblem is fixed (CSS cqh); only content scales via --s
+    // Nostromo / Online live composites: everything (emblem included) scales via --s
     nosEl.style.setProperty('--s', uiScale); onlEl.style.setProperty('--s', uiScale);
     views.console.style.fontSize = (2.2 * uiScale).toFixed(2)+'cqh';   // matches console script confont scaling
     // MU-TH-UR console is left-anchored (matches weyland-muthur.script: SetX(sw*0.16 - 40*scale))
@@ -357,10 +355,7 @@
       'sudo rm -rf '+d, 'sudo cp -rT plymouth/'+v+' '+d];
     if(useOpt) L.push('sudo cp optimized/plymouth/'+v+'/background.png '+d+'/background.png   # 5120×1440 optimized');
     if(!crtOn) L.push("sudo sed -i 's/^crt = 1;/crt = 0;/' "+d+'/'+v+'.script   # drop the CRT line');
-    // Nostromo/Online bake the emblem into the animation frames, so they have no size scale (emblem stays fixed)
-    var scales = (v!=='weyland-nostromo' && v!=='weyland-online');
-    if(uiScale!=1.0 && scales) L.push("sudo sed -i 's/^scale = 1.0;/scale = "+uiScale+";/' "+d+'/'+v+'.script   # '+sizeName()+' size');
-    if(uiScale!=1.0 && !scales) L.push('# ('+sizeName()+' size not applied — '+v+"'s emblem is baked into the animation)");
+    if(uiScale!=1.0) L.push("sudo sed -i 's/^scale = 1.0;/scale = "+uiScale+";/' "+d+'/'+v+'.script   # '+sizeName()+' size');
     L.push('sudo plymouth-set-default-theme -R '+v);
     return L.join('\n');
   }
@@ -415,8 +410,7 @@
     // cinematic splashes (frame sequence follows boot progress)
     if(CINE[tab]){ var cn=CINE[tab].n, cidx=Math.min(cn-1, Math.round(prog*(cn-1))); cineImg[tab].src=cineCache[tab][cidx].src; }
     // Nostromo live gauge (fills with progress) + percentage
-    if(tab==='nostromo'){ var lit=Math.round(prog*24);
-      for(var gi=0;gi<24;gi++){ nosBars[gi].classList.toggle('on', gi<lit); }
+    if(tab==='nostromo'){ nosFill.style.width=(prog*100).toFixed(1)+'%';
       nospct.textContent=Math.round(prog*100)+'%'; }
     // System Online: ONLINE text powers on at the start
     if(tab==='online'){ onltxt.style.opacity=Math.min(1, prog*3).toFixed(2); }

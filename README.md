@@ -71,9 +71,9 @@ Two independent switches, both offered in the picker (and documented in [INSTALL
   (~290 KB), which also shrinks the boot image. The optimized set lives in [`optimized/`](optimized/).
 - **CRT line — On vs Off.** Keep the rolling scanline grille + phosphor sweep band, or drop it for a
   clean flat screen. (GRUB has no CRT overlay; the Plasma **System Online** style is always clean.)
-- **Splash size — Small / Medium / Large.** Scales the *content* — console text, progress bar, power gauge,
-  standby meter, the ONLINE text — while the Weyland emblem stays a fixed size (the exception is **Emblem
-  Ignition**, which *is* the emblem). Medium is the default. GRUB has its own font sizes above.
+- **Splash size — Small / Medium / Large.** Scales the whole splash content — console text, progress bar,
+  power gauge, standby meter, the ONLINE text, and the Weyland emblem. Medium is the default. GRUB has
+  its own font sizes above.
 
 ---
 

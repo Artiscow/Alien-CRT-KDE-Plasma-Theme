@@ -24,7 +24,7 @@ Image {
             id: emblem
             source: "images/emblem_glow.png"
             anchors.horizontalCenter: parent.horizontalCenter
-            width: Math.round(root.height * 0.71)   // emblem stays a fixed size (not affected by uiScale)
+            width: Math.round(root.height * root.uiScale * 0.60)   // follows the S/M/L size setting
             fillMode: Image.PreserveAspectFit
             smooth: true
             opacity: 0

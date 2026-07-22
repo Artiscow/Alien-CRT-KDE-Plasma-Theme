@@ -28,7 +28,7 @@ Image {
             id: emblem
             source: "images/emblem_glow.png"
             anchors.horizontalCenter: parent.horizontalCenter
-            width: Math.round(root.height * 0.60)   // emblem stays a fixed size (not affected by uiScale)
+            width: Math.round(root.height * root.uiScale * 0.50)   // follows the S/M/L size setting
             fillMode: Image.PreserveAspectFit
             smooth: true
             SequentialAnimation on scale {
@@ -48,18 +48,15 @@ Image {
             font.letterSpacing: 4
         }
 
-        Row {
+        Rectangle {   // thin load bar: faint full-length track, continuous fill sweeps with prog
             anchors.horizontalCenter: parent.horizontalCenter
-            spacing: Math.round(root.height * root.uiScale * 0.007)   // height-based (was width-based → too wide on 32:9)
-            Repeater {
-                model: 24
-                Rectangle {
-                    width: Math.round(root.height * root.uiScale * 0.046)
-                    height: Math.round(root.height * root.uiScale * 0.024)
-                    color: "#3bd16f"
-                    opacity: index < Math.round(root.prog * 24) ? 1.0 : 0.12
-                    Behavior on opacity { NumberAnimation { duration: 160 } }
-                }
+            width: Math.round(root.height * root.uiScale * 0.90)
+            height: Math.max(4, Math.round(root.height * root.uiScale * 0.010))
+            color: "#1f3bd16f"   // alpha in the color, NOT `opacity:` — that would dim the fill child too
+            Rectangle {
+                width: Math.round(parent.width * root.prog)
+                height: parent.height
+                color: "#3bd16f"
             }
         }
 
