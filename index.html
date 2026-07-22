@@ -60,10 +60,11 @@
 
   /* grub */
   .grub{ position:absolute; inset:0; z-index:10; font-size:1.75cqh; color:var(--fg); }
-  /* match the real GRUB theme: title.png is stretched into a fixed box (left 33% / top 21% / 34% x 12%),
-     NOT scaled by aspect ratio — otherwise on ultrawide stages 34cqw balloons in height and overlaps the menu */
-  .grub .title{ position:absolute; left:33cqw; top:21cqh; width:34cqw; height:12cqh; }
-  .grub .title img{ width:100%; height:100%; object-fit:contain; }
+  /* match the real GRUB theme: title.png sits at its NATURAL size, centered (left 50%-327 /
+     top 21%) — real GRUB can't preserve aspect when scaling into a %-box, so the old 34% x 12%
+     box stretched it on ultrawide. The preview approximates natural size as height-proportional. */
+  .grub .title{ position:absolute; left:50cqw; top:21cqh; transform:translateX(-50%); height:12cqh; }
+  .grub .title img{ height:100%; width:auto; }
   .grub .menu{ position:absolute; left:27cqw; top:40cqh; width:46cqw; display:flex; flex-direction:column; gap:1.4cqh; }
   .grub .item{ padding:.3cqh .8cqh; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:1px solid transparent; }
   .grub .item.sel{ border-color:rgba(90,255,120,.6); background:rgba(20,50,28,.55); color:var(--bright); box-shadow:0 0 1cqh rgba(40,255,100,.25); }
@@ -373,7 +374,10 @@
     L.push("sudo sed -i '/^GRUB_THEME=/d' /etc/default/grub",
       'echo \'GRUB_THEME="'+d+'/'+theme+'"\' | sudo tee -a /etc/default/grub',
       "sudo sed -i 's/^GRUB_TERMINAL_OUTPUT=/#&/' /etc/default/grub",
-      "grep -q '^GRUB_GFXMODE=' /etc/default/grub || echo 'GRUB_GFXMODE=auto' | sudo tee -a /etc/default/grub",
+      "# native res — firmware 'auto' modes are 4:3/16:9, which ultrawide panels stretch",
+      'RES=$(cat /sys/class/drm/card*-*/modes 2>/dev/null | head -n1)',
+      "sudo sed -i '/^GRUB_GFXMODE=/d' /etc/default/grub",
+      'echo "GRUB_GFXMODE=${RES:+${RES}x32,}auto" | sudo tee -a /etc/default/grub',
       "# keep GRUB's graphics mode straight into Plymouth (no black flash after selecting)",
       "grep -q '^GRUB_GFXPAYLOAD_LINUX=' /etc/default/grub || echo 'GRUB_GFXPAYLOAD_LINUX=keep' | sudo tee -a /etc/default/grub",
       'sudo grub2-editenv - unset menu_auto_hide', 'sudo grub2-mkconfig -o /boot/grub2/grub.cfg');

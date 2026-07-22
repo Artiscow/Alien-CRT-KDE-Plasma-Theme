@@ -17,8 +17,10 @@ terminal-top: "0"
 terminal-width: "100%"
 terminal-height: "100%"
 
-# pre-rendered title block (Share Tech Mono — GRUB can't load TTF fonts), like the studio preview
-+ image { file = "title.png"  left = 33%  top = 21%  width = 34%  height = 12% }
+# pre-rendered title block (Share Tech Mono — GRUB can't load TTF fonts). Placed at its
+# NATURAL pixel size (653x148), centered: GRUB stretches an image to fill whatever %-box
+# it is given and cannot preserve aspect, which distorted the title on ultrawide screens.
++ image { file = "title.png"  left = 50%-327  top = 21% }
 
 # item_font is the project's real font, shipped as share-tech-16.pf2 — grub2-mkconfig
 # emits a loadfont line for every .pf2 in the theme dir (that's why the apply step matters)

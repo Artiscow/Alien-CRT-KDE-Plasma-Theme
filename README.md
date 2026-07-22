@@ -23,8 +23,11 @@ for a clean, flat screen if you prefer (the Plasma **System Online** style is al
 any boot splash and any Plasma splash independently.
 
 It's all built on a **handmade Weyland-Yutani CRT wallpaper** (an original 5120×1440 piece) -
-every GRUB, boot, and splash background is derived from it, and it's included so you can set it
-as your desktop too (see [`wallpaper/`](wallpaper/)).
+every GRUB, boot, and splash background is derived from it. The [`wallpaper/`](wallpaper/) folder
+ships it for your desktop too, along with **several still variants** (logo / no-logo, textured,
+brighter) and a **seamless looping video wallpaper** (`weyland-crt-loop.mp4`) where a soft phosphor
+sweep drifts down the screen. Set a still image with `plasma-apply-wallpaperimage <file>`; play the
+video with a KDE video-wallpaper plugin. See [`wallpaper/README.txt`](wallpaper/README.txt).
 
 Plus **[`index.html`](index.html)** - an interactive picker that previews every option and prints
 the exact install commands for whatever you choose (see below).
@@ -102,6 +105,13 @@ The GRUB entry picker comes in three menu-font layouts — pick one in `index.ht
 | **Bigger font** | Share Tech Mono 24 — more readable | `theme-bigfont.txt` |
 | **Alt font** | JetBrains Mono 18 — a different typeface | `theme-altfont.txt` |
 
+> **Ultrawide / stretched menu?** GRUB has to run at your monitor's *native* resolution —
+> firmware "auto" modes are usually 4:3/16:9, and an ultrawide panel stretches those to fill
+> the screen (stretched fonts + title, and the boot splash starting small in a corner).
+> The install steps now set `GRUB_GFXMODE` to the native mode automatically; if it still looks
+> stretched, press `c` at the GRUB menu and run `videoinfo` to see which modes your firmware
+> actually supports.
+
 ### Boot splashes (Plymouth - before login)
 
 | Theme | Style |
@@ -129,6 +139,16 @@ Or pick one visually in **System Settings › Colors & Themes › Splash Screen*
 
 ---
 
+## Updating
+
+Already installed an older version? The installed files are **copies** (and the boot
+splash is baked into the boot image), so pulling fixes here changes nothing until you
+re-run the install commands for the parts you use — the `cp` steps **plus** the
+activation step (`grub2-mkconfig` for GRUB, `plymouth-set-default-theme -R` for the
+boot splash; the Plasma splash is just the `cp`).
+
+---
+
 ## Reverting / uninstalling
 
 Run everything from **inside this folder**. Each block is self-contained - paste the whole
@@ -139,6 +159,7 @@ you want to undo.
 ```bash
 sudo rm -rf /boot/grub2/themes/weyland-crt
 sudo sed -i '/^GRUB_THEME=/d' /etc/default/grub
+sudo sed -i '/^GRUB_GFXMODE=/d' /etc/default/grub
 sudo sed -i '/^GRUB_GFXPAYLOAD_LINUX=/d' /etc/default/grub
 sudo sed -i 's/^#GRUB_TERMINAL_OUTPUT=/GRUB_TERMINAL_OUTPUT=/' /etc/default/grub
 sudo grub2-mkconfig -o /boot/grub2/grub.cfg

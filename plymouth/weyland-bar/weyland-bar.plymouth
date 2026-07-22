@@ -1,6 +1,6 @@
 [Plymouth Theme]
-Name=WEYLAND-YUTANI CRT
-Description=Alien CRT boot splash — NOSTROMO
+Name=WEYLAND-YUTANI CRT (bar)
+Description=Progress bar — minimal bar fills with boot progress
 ModuleName=script
 
 [script]

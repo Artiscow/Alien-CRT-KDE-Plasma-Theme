@@ -100,7 +100,32 @@ RISE = 39;
 prog = 0;
 fun progress_cb(duration, progress){ prog = progress; }
 Plymouth.SetBootProgressFunction(progress_cb);
+# ---- mid-boot resolution change ----
+# plymouth starts on the framebuffer GRUB hands over (often a small 4:3/16:9 firmware
+# mode); when the real GPU driver loads mid-boot the screen jumps to its native size and
+# everything sized at startup would stay small in the top-left corner with black to the
+# right/bottom (classic on ultrawide). Re-fit every sprite when the window size changes.
+fun relayout(){
+  sw = Window.GetWidth();
+  sh = Window.GetHeight();
+  sr = sw / sh;
+  if (sr > bir) { bw = sw; bh = sw / bir; }
+  else { bh = sh; bw = sh * bir; }
+  bg.image = bg.raw.Scale(bw, bh);
+  bg.sprite.SetImage(bg.image);
+  bg.sprite.SetX((sw - bw) / 2); bg.sprite.SetY((sh - bh) / 2);
+  if (crt) {
+    grille.image = Image("crt_grille.png").Scale(sw, sh + 12);
+    grille.sprite.SetImage(grille.image);
+    band.h = Math.Int(sh * 0.20);
+    band.image = Image("crt_band.png").Scale(sw, band.h);
+    band.sprite.SetImage(band.image);
+  }
+  anim.sprite.SetX(sw*0.16 - 40*scale);
+  anim.sprite.SetY(sh*0.50 - anim.h/2);
+}
 fun refresh(){
+  if (Window.GetWidth() > 0 && Window.GetHeight() > 0 && (Window.GetWidth() != sw || Window.GetHeight() != sh)) relayout();
   tick++;
   idx = Math.Int(prog * RISE);
   if (idx < 0) idx = 0;

@@ -1,6 +1,6 @@
 [Plymouth Theme]
-Name=WEYLAND-YUTANI CRT
-Description=Alien CRT boot splash — NOSTROMO
+Name=WEYLAND-YUTANI CRT (standby)
+Description=Standby meter — segmented meter follows boot load
 ModuleName=script
 
 [script]

@@ -95,9 +95,44 @@ track.sprite = Sprite(track.image);
 track.sprite.SetX(bar.x); track.sprite.SetY(bar.y); track.sprite.SetZ(6);
 fill.sprite = Sprite();
 fill.sprite.SetX(bar.x); fill.sprite.SetY(bar.y); fill.sprite.SetZ(7);
-fun progress_cb(duration, progress){ fw = bar.w * progress; if (fw < 1) fw = 1; fill.image = Image("progress.png").Scale(fw, bar.h); fill.sprite.SetImage(fill.image); }
+prog = 0;
+fun progress_cb(duration, progress){ prog = progress; fw = bar.w * prog; if (fw < 1) fw = 1; fill.image = Image("progress.png").Scale(fw, bar.h); fill.sprite.SetImage(fill.image); }
 Plymouth.SetBootProgressFunction(progress_cb);
+# ---- mid-boot resolution change ----
+# plymouth starts on the framebuffer GRUB hands over (often a small 4:3/16:9 firmware
+# mode); when the real GPU driver loads mid-boot the screen jumps to its native size and
+# everything sized at startup would stay small in the top-left corner with black to the
+# right/bottom (classic on ultrawide). Re-fit every sprite when the window size changes.
+fun relayout(){
+  sw = Window.GetWidth();
+  sh = Window.GetHeight();
+  sr = sw / sh;
+  if (sr > bir) { bw = sw; bh = sw / bir; }
+  else { bh = sh; bw = sh * bir; }
+  bg.image = bg.raw.Scale(bw, bh);
+  bg.sprite.SetImage(bg.image);
+  bg.sprite.SetX((sw - bw) / 2); bg.sprite.SetY((sh - bh) / 2);
+  if (crt) {
+    grille.image = Image("crt_grille.png").Scale(sw, sh + 12);
+    grille.sprite.SetImage(grille.image);
+    band.h = Math.Int(sh * 0.20);
+    band.image = Image("crt_band.png").Scale(sw, band.h);
+    band.sprite.SetImage(band.image);
+  }
+  bar.h = Math.Int(sh * 0.008 * scale);
+  if (bar.h < 6) bar.h = 6;
+  bar.w = sh * 0.44 * scale;
+  if (bar.w > sw * 0.6) bar.w = sw * 0.6;
+  bar.x = sw/2 - bar.w/2;
+  bar.y = sh*0.60 - bar.h/2;
+  track.image = Image("progress_bg.png").Scale(bar.w, bar.h);
+  track.sprite.SetImage(track.image);
+  track.sprite.SetX(bar.x); track.sprite.SetY(bar.y);
+  fill.sprite.SetX(bar.x); fill.sprite.SetY(bar.y);
+  progress_cb(0, prog);
+}
 fun refresh(){
+  if (Window.GetWidth() > 0 && Window.GetHeight() > 0 && (Window.GetWidth() != sw || Window.GetHeight() != sh)) relayout();
   tick++;
   if (anim.hide == 1){ track.sprite.SetOpacity(0); fill.sprite.SetOpacity(0); }
   else { track.sprite.SetOpacity(1); fill.sprite.SetOpacity(0.80 + 0.20 * Math.Sin(tick / 8)); }
