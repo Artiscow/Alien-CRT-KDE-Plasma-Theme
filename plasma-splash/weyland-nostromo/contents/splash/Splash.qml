@@ -48,15 +48,18 @@ Image {
             font.letterSpacing: 4
         }
 
-        Rectangle {   // thin load bar: faint full-length track, continuous fill sweeps with prog
+        Row {   // segmented LED load bar — slim loader footprint, old-CRT segment vibe
             anchors.horizontalCenter: parent.horizontalCenter
-            width: Math.round(root.height * root.uiScale * 0.90)
-            height: Math.max(4, Math.round(root.height * root.uiScale * 0.010))
-            color: "#1f3bd16f"   // alpha in the color, NOT `opacity:` — that would dim the fill child too
-            Rectangle {
-                width: Math.round(parent.width * root.prog)
-                height: parent.height
-                color: "#3bd16f"
+            spacing: Math.round(root.height * root.uiScale * 0.0045)
+            Repeater {
+                model: 40
+                Rectangle {
+                    width: Math.round(root.height * root.uiScale * 0.018)
+                    height: Math.max(3, Math.round(root.height * root.uiScale * 0.014))
+                    color: "#3bd16f"
+                    opacity: index < Math.round(root.prog * 40) ? 1.0 : 0.12
+                    Behavior on opacity { NumberAnimation { duration: 120 } }
+                }
             }
         }
 
