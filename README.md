@@ -72,8 +72,8 @@ Two independent switches, both offered in the picker (and documented in [INSTALL
 - **CRT line — On vs Off.** Keep the rolling scanline grille + phosphor sweep band, or drop it for a
   clean flat screen. (GRUB has no CRT overlay; the Plasma **System Online** style is always clean.)
 - **Splash size — Small / Medium / Large.** Scales the whole splash content — console text, progress bar,
-  power gauge, standby meter, the ONLINE text, and the Weyland emblem. Medium is the default. GRUB has
-  its own font sizes above.
+  power gauge, standby meter, the ONLINE text, the Weyland emblem, and the password/LUKS unlock dialog.
+  Medium is the default. GRUB has its own font sizes above.
 
 ---
 

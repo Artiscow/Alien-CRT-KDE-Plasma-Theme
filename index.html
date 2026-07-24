@@ -242,7 +242,7 @@
 
 <script>
 (function(){
-  var FRAMES = 47, RISE = 30;
+  var FRAMES = 47, RISE = 46;
   var stdImg = document.getElementById('v-standby');
   // preload standby frames
   var cache = [];
@@ -275,7 +275,9 @@
 
   // frame-sequence splashes (MU-TH-UR console, Emblem Ignition) — preload for playback.
   // Nostromo & System Online are NOT here: they're live composites (fixed emblem + scaling content).
-  var CINE={ muthur:{n:40,w:1200}, ignition:{n:40,w:900} };
+  // hf = frame width as a fraction of SCREEN HEIGHT (matches the scripts' sizeanim():
+  // muthur 0.4723*1200/680 = 0.8334, ignition 0.250*900/360 = 0.625)
+  var CINE={ muthur:{n:40,hf:0.8334}, ignition:{n:40,hf:0.625} };
   var cineCache={}, cineImg={};
   for(var ck in CINE){ cineCache[ck]=[]; cineImg[ck]=document.getElementById('v-'+ck);
     for(var ci=0;ci<CINE[ck].n;ci++){ var cim=new Image(); cim.src='plymouth/weyland-'+ck+'/frame-'+ci+'.png'; cineCache[ck][ci]=cim; } }
@@ -319,8 +321,8 @@
   // ---- resolution / aspect selector ----
   // The theme crop-fits the background, so ONE build works at every resolution.
   // This just reshapes the preview to your screen and sizes the meter/bar the way
-  // Plymouth actually will (the standby meter is a fixed 760px, so it looks smaller
-  // on bigger screens; the bar is a fraction of screen height).
+  // Plymouth actually will (every element is a fraction of screen height, so the
+  // proportions hold at any resolution).
   var stage=document.getElementById('stage');
   var barwrap=document.getElementById('v-bar');
   var resSel=document.getElementById('res');
@@ -330,15 +332,15 @@
     var W=+o.getAttribute('data-w'), H=+o.getAttribute('data-h');
     useOpt = o.getAttribute('data-opt')==='1';     // "5120 × 1440 · Optimized" entry
     stage.style.aspectRatio = W+' / '+H;
-    stdImg.style.width = (Math.max(9, 760/W*100) * uiScale).toFixed(2)+'cqw';
+    stdImg.style.width = (52.86*H/W * uiScale).toFixed(2)+'cqw';   // 0.0612*(760/88) of screen height, per sizeanim()
     barwrap.style.width = (Math.min(60, 44/(W/H)) * uiScale).toFixed(2)+'cqw';
     // MU-TH-UR console + Emblem Ignition scale as a whole frame
-    for(var ck in CINE){ cineImg[ck].style.width = (CINE[ck].w/W*100 * uiScale).toFixed(2)+'cqw'; }
+    for(var ck in CINE){ cineImg[ck].style.width = (CINE[ck].hf*H/W*100 * uiScale).toFixed(2)+'cqw'; }
     // Nostromo / Online live composites: everything (emblem included) scales via --s
     nosEl.style.setProperty('--s', uiScale); onlEl.style.setProperty('--s', uiScale);
     views.console.style.fontSize = (2.2 * uiScale).toFixed(2)+'cqh';   // matches console script confont scaling
-    // MU-TH-UR console is left-anchored (matches weyland-muthur.script: SetX(sw*0.16 - 40*scale))
-    cineImg.muthur.style.left = ((0.16 - 40*uiScale/W)*100).toFixed(2)+'cqw';
+    // MU-TH-UR console is left-anchored (matches weyland-muthur.script: SetX(sw*0.16 - anim.w*0.0333))
+    cineImg.muthur.style.left = ((0.16 - 0.0333*CINE.muthur.hf*H*uiScale/W)*100).toFixed(2)+'cqw';
     show(tab);                                     // reload bg from the chosen native/optimized set
     if(cleanOnlineView) bgImg.src = bgBase()+'plasma-splash/weyland-online/contents/splash/images/background.png';
     render();
@@ -371,8 +373,8 @@
     L.push("sudo sed -i '/^GRUB_THEME=/d' /etc/default/grub",
       'echo \'GRUB_THEME="'+d+'/'+theme+'"\' | sudo tee -a /etc/default/grub',
       "sudo sed -i 's/^GRUB_TERMINAL_OUTPUT=/#&/' /etc/default/grub",
-      "# native res — firmware 'auto' modes are 4:3/16:9, which ultrawide panels stretch",
-      'RES=$(cat /sys/class/drm/card*-*/modes 2>/dev/null | head -n1)',
+      "# native res (first CONNECTED monitor) — firmware 'auto' modes are 4:3/16:9, which ultrawide panels stretch",
+      'RES=$(for c in /sys/class/drm/card*-*; do [ "$(cat $c/status 2>/dev/null)" = connected ] && head -n1 $c/modes 2>/dev/null; done | head -n1)',
       "sudo sed -i '/^GRUB_GFXMODE=/d' /etc/default/grub",
       'echo "GRUB_GFXMODE=${RES:+${RES}x32,}auto" | sudo tee -a /etc/default/grub',
       "# keep GRUB's graphics mode straight into Plymouth (no black flash after selecting)",

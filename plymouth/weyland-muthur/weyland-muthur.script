@@ -40,24 +40,36 @@ fun crtfx(){
 # ---- password / question dialog (LUKS unlock etc.) ----
 anim.hide = 0;
 dialog.image = Image("dialog.png");
+dialog.ar = dialog.image.GetWidth() / dialog.image.GetHeight();
 dialog.box = Sprite();
 dialog.prompt = Sprite();
 dialog.entry = Sprite();
+# sized relative to the SCREEN (0.0834 reproduces the 120px-tall box on the 1440-high
+# design target) so the unlock box matches the splash at any resolution and S/M/L size
+fun sizedialog(){
+  dialog.h = Math.Int(sh * 0.0834 * scale);
+  dialog.w = Math.Int(dialog.h * dialog.ar + 0.5);
+  dialog.fs = Math.Int(sh * 0.0115 * scale);
+  if (dialog.fs < 9) dialog.fs = 9;
+  dialog.scaled = dialog.image.Scale(dialog.w, dialog.h);
+}
+sizedialog();
 fun dialog_show(prompt, entrytext){
   anim.hide = 1;
   if (!prompt) prompt = "PASSWORD REQUIRED";
   if (!entrytext) entrytext = "_";
-  dw = dialog.image.GetWidth();
-  dh = dialog.image.GetHeight();
+  dialog.lastprompt = prompt; dialog.lastentry = entrytext;
+  dw = dialog.w;
+  dh = dialog.h;
   dy = sh*0.60 - dh/2;
-  dialog.box.SetImage(dialog.image);
+  dialog.box.SetImage(dialog.scaled);
   dialog.box.SetX(sw/2 - dw/2); dialog.box.SetY(dy); dialog.box.SetZ(60);
   dialog.box.SetOpacity(1);
-  p = Image.Text(prompt, 0.23, 0.82, 0.44);
+  p = Image.Text(prompt, 0.23, 0.82, 0.44, 1.0, "Monospace " + dialog.fs);
   dialog.prompt.SetImage(p);
   dialog.prompt.SetX(sw/2 - p.GetWidth()/2); dialog.prompt.SetY(dy + dh*0.20); dialog.prompt.SetZ(61);
   dialog.prompt.SetOpacity(1);
-  e = Image.Text(entrytext, 0.49, 1.00, 0.59);
+  e = Image.Text(entrytext, 0.49, 1.00, 0.59, 1.0, "Monospace " + dialog.fs);
   dialog.entry.SetImage(e);
   dialog.entry.SetX(sw/2 - e.GetWidth()/2); dialog.entry.SetY(dy + dh*0.55); dialog.entry.SetZ(61);
   dialog.entry.SetOpacity(1);
@@ -85,14 +97,23 @@ Plymouth.SetDisplayNormalFunction(display_normal_cb);
 
 # ---- cinematic splash (pre-rendered frame sequence, centered) ----
 NUM_FRAMES = 40;
-anim.w = Math.Int(Image("frame-0.png").GetWidth() * scale);
-anim.h = Math.Int(Image("frame-0.png").GetHeight() * scale);
-for (i = 0; i < NUM_FRAMES; i++) anim.frame[i] = Image("frame-" + i + ".png").Scale(anim.w, anim.h);
+# sized relative to the SCREEN (like the QML splashes); 0.4723 reproduces the original
+# 680px-tall frames on the 1440-high design target; aspect comes from the real frame-0
+f0 = Image("frame-0.png");
+anim.ar = f0.GetWidth() / f0.GetHeight();
+BASE_H = 0.4723;
+fun sizeanim(){
+  anim.h = Math.Int(sh * BASE_H * scale);
+  anim.w = Math.Int(anim.h * anim.ar + 0.5);
+  for (i = 0; i < NUM_FRAMES; i++) anim.frame[i] = Image("frame-" + i + ".png").Scale(anim.w, anim.h);
+}
+sizeanim();
 anim.sprite = Sprite(anim.frame[0]);
 # left-anchored like a real terminal console (matches the console-log splash's logx = sw*0.16),
 # instead of floating centered — reads correctly at every aspect ratio incl. ultrawide.
-# the -40 offsets the frame's internal left padding so the "> " lines up with 16% of the screen.
-anim.sprite.SetX(sw*0.16 - 40*scale);
+# the anim.w*0.0333 offsets the frame's internal left padding (40/1200 of the frame width)
+# so the "> " lines up with 16% of the screen at any size.
+anim.sprite.SetX(sw*0.16 - anim.w*0.0333);
 anim.sprite.SetY(sh*0.50 - anim.h/2);
 anim.sprite.SetZ(8);
 # the sequence follows the real boot progress (frames 0..RISE map 0%->100%); no looping
@@ -121,7 +142,10 @@ fun relayout(){
     band.image = Image("crt_band.png").Scale(sw, band.h);
     band.sprite.SetImage(band.image);
   }
-  anim.sprite.SetX(sw*0.16 - 40*scale);
+  sizeanim();
+  sizedialog();
+  if (anim.hide == 1) dialog_show(dialog.lastprompt, dialog.lastentry);
+  anim.sprite.SetX(sw*0.16 - anim.w*0.0333);
   anim.sprite.SetY(sh*0.50 - anim.h/2);
 }
 fun refresh(){

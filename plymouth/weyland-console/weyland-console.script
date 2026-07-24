@@ -40,24 +40,36 @@ fun crtfx(){
 # ---- password / question dialog (LUKS unlock etc.) ----
 anim.hide = 0;
 dialog.image = Image("dialog.png");
+dialog.ar = dialog.image.GetWidth() / dialog.image.GetHeight();
 dialog.box = Sprite();
 dialog.prompt = Sprite();
 dialog.entry = Sprite();
+# sized relative to the SCREEN (0.0834 reproduces the 120px-tall box on the 1440-high
+# design target) so the unlock box matches the splash at any resolution and S/M/L size
+fun sizedialog(){
+  dialog.h = Math.Int(sh * 0.0834 * scale);
+  dialog.w = Math.Int(dialog.h * dialog.ar + 0.5);
+  dialog.fs = Math.Int(sh * 0.0115 * scale);
+  if (dialog.fs < 9) dialog.fs = 9;
+  dialog.scaled = dialog.image.Scale(dialog.w, dialog.h);
+}
+sizedialog();
 fun dialog_show(prompt, entrytext){
   anim.hide = 1;
   if (!prompt) prompt = "PASSWORD REQUIRED";
   if (!entrytext) entrytext = "_";
-  dw = dialog.image.GetWidth();
-  dh = dialog.image.GetHeight();
+  dialog.lastprompt = prompt; dialog.lastentry = entrytext;
+  dw = dialog.w;
+  dh = dialog.h;
   dy = sh*0.60 - dh/2;
-  dialog.box.SetImage(dialog.image);
+  dialog.box.SetImage(dialog.scaled);
   dialog.box.SetX(sw/2 - dw/2); dialog.box.SetY(dy); dialog.box.SetZ(60);
   dialog.box.SetOpacity(1);
-  p = Image.Text(prompt, 0.23, 0.82, 0.44);
+  p = Image.Text(prompt, 0.23, 0.82, 0.44, 1.0, "Monospace " + dialog.fs);
   dialog.prompt.SetImage(p);
   dialog.prompt.SetX(sw/2 - p.GetWidth()/2); dialog.prompt.SetY(dy + dh*0.20); dialog.prompt.SetZ(61);
   dialog.prompt.SetOpacity(1);
-  e = Image.Text(entrytext, 0.49, 1.00, 0.59);
+  e = Image.Text(entrytext, 0.49, 1.00, 0.59, 1.0, "Monospace " + dialog.fs);
   dialog.entry.SetImage(e);
   dialog.entry.SetX(sw/2 - e.GetWidth()/2); dialog.entry.SetY(dy + dh*0.55); dialog.entry.SetZ(61);
   dialog.entry.SetOpacity(1);
@@ -111,8 +123,18 @@ fun addline (text) {
   redraw();
 }
 cur.raw = Image("cursor.png");
-cur.image = cur.raw.Scale(Math.Int(cur.raw.GetWidth()*scale), Math.Int(cur.raw.GetHeight()*scale));
-cur.sprite = Sprite(cur.image);
+cur.ar = cur.raw.GetWidth() / cur.raw.GetHeight();
+cur.sprite = Sprite();
+# cursor sized relative to the SCREEN (0.0125 reproduces the 18px-tall cursor on the
+# 1440-high design target) so it matches the log text at any resolution
+fun sizecursor(){
+  cur.h = Math.Int(sh * 0.0125 * scale);
+  if (cur.h < 8) cur.h = 8;
+  cur.w = Math.Int(cur.h * cur.ar + 0.5);
+  cur.image = cur.raw.Scale(cur.w, cur.h);
+  cur.sprite.SetImage(cur.image);
+}
+sizecursor();
 cur.sprite.SetZ(6);
 # log follows the real boot progress: each line appears as boot passes its mark
 shown = 0;
@@ -144,6 +166,9 @@ fun relayout(){
   lh = Math.Int(confont * 1.55);
   logx = sw * 0.16;
   logy = sh * 0.40;
+  sizecursor();
+  sizedialog();
+  if (anim.hide == 1) dialog_show(dialog.lastprompt, dialog.lastentry);
   redraw();
 }
 fun refresh(){
@@ -161,8 +186,17 @@ fun refresh(){
   if (row > maxlines) row = maxlines;
   cur.sprite.SetX(logx);
   cur.sprite.SetY(logy + row * lh);
-  if ((Math.Int(tick / 22) % 2) == 0) cur.sprite.SetOpacity(0.85);
-  else cur.sprite.SetOpacity(0);
+  # the log overlaps the dialog area, so hide it (and the cursor) while a password/
+  # question prompt is up; the addline ladder keeps running so the log is current
+  # again the moment the dialog closes
+  if (anim.hide == 1){
+    for (i = 0; i < maxlines; i++) sprites[i].SetOpacity(0);
+    cur.sprite.SetOpacity(0);
+  } else {
+    for (i = 0; i < maxlines; i++) sprites[i].SetOpacity(1);
+    if ((Math.Int(tick / 22) % 2) == 0) cur.sprite.SetOpacity(0.85);
+    else cur.sprite.SetOpacity(0);
+  }
   if (crt) crtfx();
 }
 Plymouth.SetRefreshFunction(refresh);

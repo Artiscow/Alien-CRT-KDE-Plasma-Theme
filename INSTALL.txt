@@ -40,7 +40,7 @@ Two independent switches change that; the index.html picker adds the extra lines
   (GRUB has no CRT overlay, so this doesn't apply there; the Plasma "System Online" splash is already clean.)
 
 * Splash size — SMALL / MEDIUM / LARGE
-  Scales the whole splash content: console text, progress bar, power gauge, standby meter, the ONLINE text, and the Weyland emblem.
+  Scales the whole splash content: console text, progress bar, power gauge, standby meter, the ONLINE text, the Weyland emblem, and the password/LUKS unlock dialog.
   Default is MEDIUM.
   Set it AFTER copying in (0.8 = Small, 1.25 = Large):
     boot splash: sudo sed -i 's/^scale = 1.0;/scale = 0.8;/' /usr/share/plymouth/themes/<name>/<name>.script
@@ -67,8 +67,8 @@ sudo sed -i 's/^GRUB_TERMINAL_OUTPUT=/#&/' /etc/default/grub
 sudo grub2-editenv - unset menu_auto_hide
 
 # RESOLUTION — GRUB must run at the monitor's NATIVE resolution; with "auto" the firmware usually offers only 4:3/16:9 modes, and an ultrawide panel stretches those to fill the screen (stretched fonts + title).
-# This reads the native mode from the kernel and falls back to auto if it can't:
-RES=$(cat /sys/class/drm/card*-*/modes 2>/dev/null | head -n1)
+# This reads the native mode of the first CONNECTED monitor from the kernel and falls back to auto if it can't:
+RES=$(for c in /sys/class/drm/card*-*; do [ "$(cat $c/status 2>/dev/null)" = connected ] && head -n1 $c/modes 2>/dev/null; done | head -n1)
 sudo sed -i '/^GRUB_GFXMODE=/d' /etc/default/grub
 echo "GRUB_GFXMODE=${RES:+${RES}x32,}auto" | sudo tee -a /etc/default/grub
 # If the menu STILL looks stretched after this, the firmware can't do that mode: press 'c' at the GRUB menu, run `videoinfo` to list the modes it CAN do, and put the closest one on the GRUB_GFXMODE line (then re-run the grub2-mkconfig step).
@@ -130,7 +130,7 @@ Test a boot splash without rebooting (from a text console, Ctrl+Alt+F3):
   (Ctrl+Alt+F2 to return to the desktop)
 
 Revert a boot splash:   sudo plymouth-set-default-theme -R bgrt
-Revert Plasma splash:   pick "Breeze" (or "None") in the Splash Screen list, and  rm -r ~/.local/share/plasma/look-and-feel/weyland-{muthur,nostromo,ignition}
+Revert Plasma splash:   pick "Breeze" (or "None") in the Splash Screen list, and  rm -r ~/.local/share/plasma/look-and-feel/weyland-{muthur,nostromo,ignition,online}
 Revert GRUB:            remove the GRUB_THEME, GRUB_GFXMODE and GRUB_GFXPAYLOAD_LINUX lines from /etc/default/grub, un-comment GRUB_TERMINAL_OUTPUT, re-run the grub2-mkconfig line.
 
 --------------------------------------------------------------------
